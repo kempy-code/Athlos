@@ -1,0 +1,446 @@
+/* =====================================
+   ATHLOS MAIN STYLES
+   ===================================== */
+
+@import url("./animations.css");
+@import url("./cards.css");
+@import url("./progress.css");
+
+
+
+/* =====================================
+   RESET
+   ===================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+html,
+body {
+
+    width: 100%;
+    min-height: 100%;
+
+    font-family:
+        "Inter",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    background:
+        radial-gradient(
+            circle at top,
+            #182235 0%,
+            #0b1018 45%,
+            #06090e 100%
+        );
+
+    color: white;
+
+}
+
+
+
+/* =====================================
+   APP CONTAINER
+   ===================================== */
+
+
+body {
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 30px;
+
+}
+
+
+
+.container {
+
+    width: min(700px, 95vw);
+
+    min-height: 650px;
+
+    padding: 50px;
+
+    background:
+
+        rgba(255,255,255,0.06);
+
+    backdrop-filter:
+        blur(20px);
+
+    border:
+        1px solid rgba(255,255,255,0.12);
+
+    border-radius:
+        32px;
+
+    box-shadow:
+
+        0 30px 80px
+        rgba(0,0,0,0.45);
+
+    position:
+        relative;
+
+    overflow:
+        hidden;
+
+}
+
+
+
+/* =====================================
+   HEADER
+   ===================================== */
+
+
+.logo {
+
+    font-size:
+        42px;
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        -2px;
+
+    margin-bottom:
+        10px;
+
+}
+
+
+.subtitle {
+
+    color:
+        rgba(255,255,255,0.65);
+
+    font-size:
+        16px;
+
+    margin-bottom:
+        40px;
+
+}
+
+
+
+
+/* =====================================
+   QUESTION AREA
+   ===================================== */
+
+
+.question-wrapper {
+
+    animation:
+        fadeInUp 0.4s ease;
+
+}
+
+
+
+.question-title {
+
+
+    font-size:
+        32px;
+
+
+    line-height:
+        1.2;
+
+
+    margin-bottom:
+        30px;
+
+
+    font-weight:
+        700;
+
+
+}
+
+
+
+
+
+/* =====================================
+   INPUTS
+   ===================================== */
+
+
+.text-input {
+
+
+    width:
+        100%;
+
+
+    padding:
+        18px 20px;
+
+
+    border-radius:
+        18px;
+
+
+    border:
+        1px solid
+        rgba(255,255,255,0.15);
+
+
+    background:
+        rgba(255,255,255,0.08);
+
+
+    color:
+        white;
+
+
+    font-size:
+        18px;
+
+
+    outline:
+        none;
+
+
+    transition:
+        0.25s ease;
+
+}
+
+
+
+.text-input:focus {
+
+
+    border-color:
+        rgba(255,255,255,0.5);
+
+
+    background:
+        rgba(255,255,255,0.12);
+
+
+}
+
+
+
+
+textarea.text-input {
+
+
+    min-height:
+        120px;
+
+
+    resize:
+        none;
+
+}
+
+
+
+
+/* =====================================
+   BUTTONS
+   ===================================== */
+
+
+.next-button {
+
+
+    margin-top:
+        40px;
+
+
+    width:
+        100%;
+
+
+    padding:
+        18px;
+
+
+    border:
+        none;
+
+
+    border-radius:
+        18px;
+
+
+    background:
+        white;
+
+
+    color:
+        black;
+
+
+    font-size:
+        18px;
+
+
+    font-weight:
+        700;
+
+
+    cursor:
+        pointer;
+
+
+    transition:
+        0.25s ease;
+
+
+}
+
+
+
+.next-button:hover {
+
+
+    transform:
+        translateY(-3px);
+
+
+    box-shadow:
+        0 15px 30px
+        rgba(255,255,255,0.15);
+
+
+}
+
+
+
+.next-button:active {
+
+
+    transform:
+        scale(0.98);
+
+
+}
+
+
+
+
+/* =====================================
+   RESULTS PAGE
+   ===================================== */
+
+
+.results {
+
+
+    animation:
+        fadeInUp 0.5s ease;
+
+}
+
+
+
+.results h1 {
+
+
+    font-size:
+        36px;
+
+
+    margin-bottom:
+        20px;
+
+
+}
+
+
+
+.results pre {
+
+
+    white-space:
+        pre-wrap;
+
+
+    overflow-wrap:
+        break-word;
+
+
+    line-height:
+        1.6;
+
+
+    color:
+        rgba(255,255,255,0.85);
+
+
+}
+
+
+
+
+
+/* =====================================
+   MOBILE
+   ===================================== */
+
+
+@media(max-width:600px){
+
+
+    body {
+
+        padding:
+            15px;
+
+    }
+
+
+
+    .container {
+
+        padding:
+            30px 22px;
+
+        border-radius:
+            24px;
+
+        min-height:
+            600px;
+
+    }
+
+
+
+    .logo {
+
+        font-size:
+            34px;
+
+    }
+
+
+
+    .question-title {
+
+        font-size:
+            26px;
+
+    }
+
+
+}

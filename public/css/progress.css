@@ -1,0 +1,370 @@
+/* =========================================
+   ATHLOS ONBOARDING PROGRESS SYSTEM
+   ========================================= */
+
+
+/* Progress wrapper */
+
+.progress-container {
+    width: 100%;
+    max-width: 700px;
+    margin: 30px auto 20px;
+    padding: 0 20px;
+}
+
+
+
+/* Progress background */
+
+.progress-track {
+
+    width: 100%;
+    height: 8px;
+
+    background: rgba(255,255,255,0.08);
+
+    border-radius: 20px;
+
+    overflow: hidden;
+
+    position: relative;
+
+}
+
+
+
+/* Animated progress fill */
+
+.progress-bar {
+
+    height: 100%;
+
+    width: 0%;
+
+    border-radius: inherit;
+
+    background:
+        linear-gradient(
+            90deg,
+            #ffffff,
+            #9ca3af
+        );
+
+    transition:
+        width 0.6s cubic-bezier(
+            0.4,
+            0,
+            0.2,
+            1
+        );
+
+    position: relative;
+
+}
+
+
+
+/* Moving shine effect */
+
+.progress-bar::after {
+
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: -100%;
+
+    width: 50%;
+    height: 100%;
+
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255,255,255,0.45),
+            transparent
+        );
+
+
+    animation:
+        progressShimmer 2.5s infinite;
+
+}
+
+
+
+/* Progress text */
+
+.progress-info {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+
+    margin-top: 12px;
+
+
+    font-size: 0.85rem;
+
+    color:
+        rgba(255,255,255,0.55);
+
+}
+
+
+
+.progress-step {
+
+    font-weight: 500;
+
+}
+
+
+
+.progress-time {
+
+    opacity: 0.8;
+
+}
+
+
+
+
+
+/* Question dots */
+
+.progress-dots {
+
+    display: flex;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    margin-top: 18px;
+
+}
+
+
+
+.progress-dot {
+
+    width: 7px;
+
+    height: 7px;
+
+
+    border-radius: 50%;
+
+
+    background:
+        rgba(255,255,255,0.15);
+
+
+    transition:
+        all 0.35s ease;
+
+}
+
+
+
+.progress-dot.active {
+
+
+    width: 22px;
+
+
+    border-radius: 10px;
+
+
+    background:
+        rgba(255,255,255,0.9);
+
+
+}
+
+
+
+.progress-dot.completed {
+
+    background:
+        rgba(255,255,255,0.45);
+
+}
+
+
+
+
+
+/* Section progress */
+
+.section-progress {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-bottom: 25px;
+
+
+}
+
+
+
+.section-progress-line {
+
+    flex: 1;
+
+    height: 2px;
+
+
+    background:
+        rgba(255,255,255,0.1);
+
+}
+
+
+
+.section-progress-line.completed {
+
+    background:
+        rgba(255,255,255,0.7);
+
+}
+
+
+
+.section-progress-label {
+
+    font-size: 0.75rem;
+
+    letter-spacing: 0.08em;
+
+    text-transform: uppercase;
+
+
+    color:
+        rgba(255,255,255,0.5);
+
+}
+
+
+
+
+
+
+/* Loading progress screen */
+
+.generating-progress {
+
+    width: 280px;
+
+    margin: 40px auto;
+
+}
+
+
+
+.generating-progress .progress-track {
+
+    height: 6px;
+
+}
+
+
+
+.generating-progress .progress-bar {
+
+
+    animation:
+
+        loadingProgress 3s ease infinite;
+
+}
+
+
+
+
+
+
+
+/* Animations */
+
+@keyframes progressShimmer {
+
+
+    0% {
+
+        left: -100%;
+
+    }
+
+
+    100% {
+
+        left: 200%;
+
+    }
+
+}
+
+
+
+
+@keyframes loadingProgress {
+
+
+    0% {
+
+        width: 10%;
+
+    }
+
+
+    50% {
+
+        width: 75%;
+
+    }
+
+
+    100% {
+
+        width: 95%;
+
+    }
+
+}
+
+
+
+
+
+
+/* Mobile */
+
+@media(max-width:600px){
+
+
+    .progress-container {
+
+        padding:0 15px;
+
+    }
+
+
+    .progress-info {
+
+        font-size:0.75rem;
+
+    }
+
+
+}
