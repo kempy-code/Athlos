@@ -4,7 +4,12 @@
 // =====================================
 
 
+// =====================================
+// QUESTION ENGINE
+// =====================================
+
 import {
+
     initQuestionEngine,
     getCurrentQuestion,
     getNextVisibleQuestion,
@@ -12,48 +17,98 @@ import {
     answerQuestion,
     validateAnswer,
     isComplete
+
 } from "./questionEngine.js";
 
 
+
+
+// =====================================
+// STATE
+// =====================================
+
 import {
-    getState,
-    setLoading
+
+    getState
+
 } from "./state.js";
 
 
+
+
+// =====================================
+// QUESTION RENDERERS
+// =====================================
+
 import {
+
+    renderSelect
+
+} from "./renders/select.js";
+
+
+import {
+
     renderCard
+
 } from "./renders/card.js";
 
 
 import {
+
     renderSlider
+
 } from "./renders/slider.js";
 
 
 import {
+
     renderNumber
+
 } from "./renders/number.js";
 
 
 import {
+
     renderText
+
 } from "./renders/text.js";
 
 
 import {
+
     renderChips
+
 } from "./renders/chips.js";
 
 
 import {
+
     renderToggle
+
 } from "./renders/toggle.js";
 
 
+
 import {
+
     renderLoading
+
 } from "./renders/loading.js";
+
+
+
+
+// =====================================
+// RESULTS DASHBOARD
+// =====================================
+
+import {
+
+    loadDashboard
+
+} from "./results/results.js";
+
 
 
 
@@ -67,35 +122,37 @@ import {
 
 
 const title =
-    document.getElementById(
-        "question-title"
-    );
+document.getElementById(
+    "question-title"
+);
+
 
 
 const description =
-    document.getElementById(
-        "question-description"
-    );
+document.getElementById(
+    "question-description"
+);
+
 
 
 const options =
-    document.getElementById(
-        "options"
-    );
+document.getElementById(
+    "options"
+);
+
 
 
 const nextButton =
-    document.getElementById(
-        "next-btn"
-    );
+document.getElementById(
+    "next-btn"
+);
+
 
 
 const progress =
-    document.getElementById(
-        "progress-bar"
-    );
-
-
+document.getElementById(
+    "progress-bar"
+);
 
 
 
@@ -117,7 +174,7 @@ let currentAnswer = null;
 
 
 // =====================================
-// START
+// START APPLICATION
 // =====================================
 
 
@@ -147,24 +204,32 @@ function start(){
 function renderCurrentQuestion(){
 
 
+
     const question =
         getNextVisibleQuestion();
 
 
 
-    if(
-        !question
-    ){
+
+
+    if(!question){
+
 
         finishQuiz();
 
+
         return;
+
 
     }
 
 
 
+
+
     currentAnswer = null;
+
+
 
 
 
@@ -173,12 +238,18 @@ function renderCurrentQuestion(){
 
 
 
+
+
     if(description){
+
 
         description.textContent =
             question.description || "";
 
+
     }
+
+
 
 
 
@@ -188,7 +259,52 @@ function renderCurrentQuestion(){
 
 
 
+
+
     switch(question.type){
+
+
+
+        case "select":
+
+
+            renderSelect(
+
+                options,
+
+                question,
+
+                selectAnswer
+
+            );
+
+
+            break;
+
+
+
+
+
+
+        case "card":
+
+
+            renderCard(
+
+                options,
+
+                question,
+
+                selectAnswer
+
+            );
+
+
+            break;
+
+
+
+
 
 
         case "chips":
@@ -204,7 +320,11 @@ function renderCurrentQuestion(){
 
             );
 
+
             break;
+
+
+
 
 
 
@@ -221,7 +341,11 @@ function renderCurrentQuestion(){
 
             );
 
+
             break;
+
+
+
 
 
 
@@ -238,7 +362,11 @@ function renderCurrentQuestion(){
 
             );
 
+
             break;
+
+
+
 
 
 
@@ -255,7 +383,11 @@ function renderCurrentQuestion(){
 
             );
 
+
             break;
+
+
+
 
 
 
@@ -272,25 +404,28 @@ function renderCurrentQuestion(){
 
             );
 
+
             break;
+
+
+
 
 
 
         default:
 
 
-            renderCard(
+            console.error(
 
-                options,
-
-                question,
-
-                selectAnswer
+                "Unknown question type:",
+                question.type
 
             );
 
 
     }
+
+
 
 
 
@@ -306,9 +441,8 @@ function renderCurrentQuestion(){
 
 
 
-
 // =====================================
-// ANSWER HANDLER
+// ANSWER SELECTION
 // =====================================
 
 
@@ -316,7 +450,6 @@ function selectAnswer(value){
 
 
     currentAnswer = value;
-
 
 
 }
@@ -335,76 +468,90 @@ function selectAnswer(value){
 
 nextButton.addEventListener(
 
-"click",
+    "click",
 
-()=>{
-
-
-    const question =
-        getCurrentQuestion();
+    ()=>{
 
 
 
-    if(
+        const question =
+            getCurrentQuestion();
 
-        !validateAnswer(
 
-            question,
+
+
+
+        if(
+
+            !validateAnswer(
+
+                question,
+
+                currentAnswer
+
+            )
+
+        ){
+
+
+
+            alert(
+                "Please answer this question"
+            );
+
+
+            return;
+
+
+        }
+
+
+
+
+
+
+
+        answerQuestion(
+
+            question.id,
 
             currentAnswer
 
-        )
-
-    ){
-
-
-        alert(
-            "Please answer this question"
         );
 
 
-        return;
+
+
+
+
+
+        if(isComplete()){
+
+
+            finishQuiz();
+
+
+            return;
+
+
+        }
+
+
+
+
+
+
+        nextQuestion();
+
+
+
+
+
+        renderCurrentQuestion();
+
+
 
     }
-
-
-
-
-
-    answerQuestion(
-
-        question.id,
-
-        currentAnswer
-
-    );
-
-
-
-
-
-    if(
-        isComplete()
-    ){
-
-        finishQuiz();
-
-        return;
-
-    }
-
-
-
-
-    nextQuestion();
-
-
-
-    renderCurrentQuestion();
-
-
-
-}
 
 );
 
@@ -416,15 +563,18 @@ nextButton.addEventListener(
 
 
 // =====================================
-// PROGRESS
+// PROGRESS BAR
 // =====================================
 
 
 function updateProgress(){
 
 
+
     const state =
         getState();
+
+
 
 
 
@@ -433,8 +583,12 @@ function updateProgress(){
 
 
 
+
+
     const current =
         state.currentQuestionIndex + 1;
+
+
 
 
 
@@ -442,17 +596,24 @@ function updateProgress(){
         (
             current /
             total
+
         ) * 100;
+
+
+
 
 
 
 
     if(progress){
 
+
         progress.style.width =
-            percent + "%";
+            `${percent}%`;
+
 
     }
+
 
 
 }
@@ -465,38 +626,53 @@ function updateProgress(){
 
 
 // =====================================
-// FINISH QUIZ
+// FINISH ONBOARDING
 // =====================================
 
 
 async function finishQuiz(){
 
 
+
     document
     .querySelector(".container")
     .innerHTML = `
 
+
         <div class="results">
 
+
             <h1>
-            Building your Athlos plan...
+                Building your Athlos plan...
             </h1>
+
 
             <div id="loading"></div>
 
+
         </div>
+
 
     `;
 
 
 
+
+
     renderLoading(
-        document.getElementById("loading")
+
+        document.getElementById(
+            "loading"
+        )
+
     );
 
 
 
+
+
     await generatePlan();
+
 
 
 }
@@ -509,7 +685,7 @@ async function finishQuiz(){
 
 
 // =====================================
-// SEND TO AI
+// SEND PROFILE TO AI
 // =====================================
 
 
@@ -523,7 +699,9 @@ async function generatePlan(){
 
 
 
+
     try{
+
 
 
         const response =
@@ -533,26 +711,41 @@ async function generatePlan(){
 
             {
 
+
                 method:"POST",
 
+
+
                 headers:{
+
 
                     "Content-Type":
                     "application/json"
 
+
                 },
+
 
 
                 body:JSON.stringify({
 
+
                     profile:
                     state.profile
 
+
+
                 })
+
+
 
             }
 
+
         );
+
+
+
 
 
 
@@ -565,22 +758,30 @@ async function generatePlan(){
 
 
 
-        if(
-            data.error
-        ){
+
+
+        if(data.error){
+
 
             throw new Error(
                 data.error
             );
 
+
         }
 
-
-
-
-        showProgram(
+        console.log(
+            "AI PLAN:",
             data.plan
         );
+
+        showProgram(
+
+            data.plan
+
+        );
+
+
 
 
 
@@ -589,7 +790,11 @@ async function generatePlan(){
     catch(error){
 
 
-        console.error(error);
+
+        console.error(
+            error
+        );
+
 
 
 
@@ -597,15 +802,19 @@ async function generatePlan(){
         .querySelector(".results")
         .innerHTML = `
 
+
             <h1>
-            Error generating program
+                Error generating program
             </h1>
 
+
             <p>
-            ${error.message}
+                ${error.message}
             </p>
 
+
         `;
+
 
 
     }
@@ -621,7 +830,7 @@ async function generatePlan(){
 
 
 // =====================================
-// DISPLAY PROGRAM
+// LOAD RESULTS DASHBOARD
 // =====================================
 
 
@@ -631,31 +840,100 @@ function showProgram(plan){
 
     document
     .querySelector(".container")
-    .innerHTML = `
+    .innerHTML = "";
 
-        <div class="results">
+
+
+
+
+    const dashboard =
+        document.createElement(
+            "div"
+        );
+
+
+
+
+
+    dashboard.className =
+        "athlos-dashboard";
+
+
+
+
+
+
+    dashboard.innerHTML = `
+
+
+
+        <section class="dashboard-header">
+
 
             <h1>
-            Your Athlos Program
+                Your Athlos Program
             </h1>
 
 
-            <pre>
-${JSON.stringify(
 
-    plan,
-
-    null,
-
-    2
-
-)}
-            </pre>
+            <p>
+                Personalised AI training plan
+            </p>
 
 
-        </div>
+
+        </section>
+
+
+
+
+
+        <section id="summary"></section>
+
+
+        <section id="calendar"></section>
+
+
+        <section id="workouts"></section>
+
+
+        <section id="analytics"></section>
+
+
+        <section id="nutrition"></section>
+
+
+        <section id="recovery"></section>
+
+
+        <section id="exercises"></section>
+
+
+        <section id="achievements"></section>
+
+
 
     `;
+
+
+
+
+
+
+
+    document
+    .querySelector(".container")
+    .appendChild(
+        dashboard
+    );
+
+
+
+
+
+
+    loadDashboard(plan);
+
 
 
 }
@@ -665,6 +943,11 @@ ${JSON.stringify(
 
 
 
+
+
+// =====================================
+// RUN
+// =====================================
 
 
 start();

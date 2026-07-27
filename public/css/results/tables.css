@@ -1,0 +1,558 @@
+/* =====================================
+   ATHLOS TABLES
+   public/css/results/tables.css
+   ===================================== */
+
+
+
+/* =====================================
+   TABLE CONTAINER
+   ===================================== */
+
+
+.table-container {
+
+    width: 100%;
+
+    overflow-x: auto;
+
+    background:
+
+        #ffffff;
+
+
+    border:
+
+        1px solid
+
+        #e5e5e7;
+
+
+    border-radius:
+
+        20px;
+
+
+    padding:
+
+        8px;
+
+}
+
+
+
+
+
+
+/* =====================================
+   BASE TABLE
+   ===================================== */
+
+
+.athlos-table {
+
+    width:
+
+        100%;
+
+
+    border-collapse:
+
+        collapse;
+
+
+    min-width:
+
+        700px;
+
+
+}
+
+
+
+
+
+
+
+/* =====================================
+   HEADER
+   ===================================== */
+
+
+.athlos-table thead {
+
+
+    background:
+
+        #f5f5f7;
+
+
+}
+
+
+
+
+
+.athlos-table th {
+
+
+    text-align:
+
+        left;
+
+
+    padding:
+
+        16px 18px;
+
+
+    font-size:
+
+        13px;
+
+
+    font-weight:
+
+        600;
+
+
+    color:
+
+        #6e6e73;
+
+
+    letter-spacing:
+
+        0.2px;
+
+
+    border-bottom:
+
+        1px solid
+
+        #e5e5e7;
+
+
+}
+
+
+
+
+
+
+
+
+/* =====================================
+   BODY
+   ===================================== */
+
+
+.athlos-table td {
+
+
+    padding:
+
+        18px;
+
+
+    font-size:
+
+        15px;
+
+
+    color:
+
+        #1d1d1f;
+
+
+    border-bottom:
+
+        1px solid
+
+        #f0f0f0;
+
+
+}
+
+
+
+
+
+.athlos-table tr:last-child td {
+
+
+    border-bottom:
+
+        none;
+
+
+}
+
+
+
+
+
+
+
+.athlos-table tbody tr {
+
+
+    transition:
+
+        background .15s ease;
+
+
+}
+
+
+
+.athlos-table tbody tr:hover {
+
+
+    background:
+
+        #fafafa;
+
+
+}
+
+
+
+
+
+
+
+
+/* =====================================
+   CELL TYPES
+   ===================================== */
+
+
+.table-title {
+
+
+    font-weight:
+
+        600;
+
+
+}
+
+
+
+.table-secondary {
+
+
+    color:
+
+        #6e6e73;
+
+
+    font-size:
+
+        14px;
+
+
+}
+
+
+
+.table-number {
+
+
+    font-weight:
+
+        600;
+
+
+}
+
+
+
+
+
+
+
+
+/* =====================================
+   STATUS BADGES
+   ===================================== */
+
+
+.table-badge {
+
+
+    display:
+
+        inline-flex;
+
+
+    align-items:
+
+        center;
+
+
+    padding:
+
+        6px 12px;
+
+
+    border-radius:
+
+        999px;
+
+
+    font-size:
+
+        12px;
+
+
+    font-weight:
+
+        600;
+
+
+    background:
+
+        #f5f5f7;
+
+
+    color:
+
+        #1d1d1f;
+
+
+}
+
+
+
+
+
+.table-badge.completed {
+
+
+    background:
+
+        #000;
+
+
+    color:
+
+        #fff;
+
+
+}
+
+
+
+.table-badge.upcoming {
+
+
+    border:
+
+        1px solid
+
+        #d2d2d7;
+
+
+}
+
+
+
+
+
+
+
+/* =====================================
+   WORKOUT TABLE
+   ===================================== */
+
+
+.workout-table td:first-child {
+
+
+    font-weight:
+
+        600;
+
+
+}
+
+
+
+
+.workout-duration {
+
+
+    color:
+
+        #6e6e73;
+
+
+}
+
+
+
+
+
+
+
+/* =====================================
+   EXERCISE TABLE
+   ===================================== */
+
+
+.exercise-table th:nth-child(1),
+
+.exercise-table td:nth-child(1) {
+
+
+    width:
+
+        25%;
+
+
+}
+
+
+
+
+.exercise-table th:nth-child(2),
+
+.exercise-table td:nth-child(2) {
+
+
+    width:
+
+        15%;
+
+
+}
+
+
+
+
+
+
+
+/* =====================================
+   NUTRITION TABLE
+   ===================================== */
+
+
+.nutrition-table {
+
+
+    max-width:
+
+        600px;
+
+
+}
+
+
+
+
+
+.nutrition-table td:last-child {
+
+
+    text-align:
+
+        right;
+
+
+    font-weight:
+
+        600;
+
+
+}
+
+
+
+
+
+
+
+/* =====================================
+   EMPTY TABLE STATE
+   ===================================== */
+
+
+.table-empty {
+
+
+    padding:
+
+        40px;
+
+
+    text-align:
+
+        center;
+
+
+    color:
+
+        #6e6e73;
+
+
+    font-size:
+
+        15px;
+
+
+}
+
+
+
+
+
+
+
+
+/* =====================================
+   MOBILE
+   ===================================== */
+
+
+@media(max-width:700px){
+
+
+    .table-container {
+
+
+        border-radius:
+
+            16px;
+
+
+    }
+
+
+
+    .athlos-table th {
+
+
+        padding:
+
+            14px;
+
+
+    }
+
+
+
+    .athlos-table td {
+
+
+        padding:
+
+            14px;
+
+
+    }
+
+
+}

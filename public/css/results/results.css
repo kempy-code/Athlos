@@ -1,0 +1,716 @@
+/* =====================================
+   ATHLOS RESULTS DASHBOARD
+   public/css/results/results.css
+   ===================================== */
+
+
+
+/* =====================================
+   DASHBOARD ROOT
+   ===================================== */
+
+
+.athlos-dashboard {
+
+    width: 100%;
+
+    max-width: 1200px;
+
+    margin: 0 auto;
+
+    padding:
+
+        40px 24px 80px;
+
+}
+
+
+
+
+
+
+
+/* =====================================
+   GLOBAL SECTION STYLE
+   ===================================== */
+
+
+.dashboard-section {
+
+    margin-top: 48px;
+
+}
+
+
+
+.section-header {
+
+    margin-bottom: 24px;
+
+}
+
+
+
+.section-header h2 {
+
+    margin: 0;
+
+    font-size: 28px;
+
+    font-weight: 600;
+
+    letter-spacing:
+
+        -0.5px;
+
+}
+
+
+
+.section-header p {
+
+    margin-top: 8px;
+
+    color:
+
+        #6e6e73;
+
+    font-size:
+
+        15px;
+
+}
+
+
+
+
+
+
+
+
+/* =====================================
+   DASHBOARD HEADER
+   ===================================== */
+
+
+.dashboard-header {
+
+    margin-bottom: 40px;
+
+}
+
+
+
+.dashboard-header h1 {
+
+    font-size:
+
+        48px;
+
+
+    line-height:
+
+        1.1;
+
+
+    font-weight:
+
+        700;
+
+
+    letter-spacing:
+
+        -1.5px;
+
+
+    margin:
+
+        0 0 12px;
+
+}
+
+
+
+.dashboard-header p {
+
+    font-size:
+
+        18px;
+
+
+    color:
+
+        #6e6e73;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================
+   PROFILE SUMMARY
+   ===================================== */
+
+
+.athlos-profile-summary {
+
+    background:
+
+        #ffffff;
+
+
+    border:
+
+        1px solid
+
+        #e5e5e7;
+
+
+    border-radius:
+
+        24px;
+
+
+    padding:
+
+        32px;
+
+
+}
+
+
+
+
+
+.profile-title h2 {
+
+    margin:
+
+        0;
+
+
+    font-size:
+
+        26px;
+
+
+    font-weight:
+
+        600;
+
+
+}
+
+
+
+.profile-title p {
+
+    margin-top:
+
+        8px;
+
+
+    color:
+
+        #6e6e73;
+
+
+}
+
+
+
+
+
+
+
+.profile-stats {
+
+    display:
+
+        grid;
+
+
+    grid-template-columns:
+
+        repeat(4,1fr);
+
+
+    gap:
+
+        16px;
+
+
+    margin-top:
+
+        28px;
+
+
+}
+
+
+
+
+
+
+
+.profile-stat {
+
+    background:
+
+        #f5f5f7;
+
+
+    border-radius:
+
+        16px;
+
+
+    padding:
+
+        18px;
+
+
+}
+
+
+
+
+
+.profile-stat span {
+
+    display:
+
+        block;
+
+
+    color:
+
+        #6e6e73;
+
+
+    font-size:
+
+        13px;
+
+
+    margin-bottom:
+
+        8px;
+
+
+}
+
+
+
+.profile-stat strong {
+
+    font-size:
+
+        18px;
+
+
+    font-weight:
+
+        600;
+
+
+}
+
+
+
+
+
+
+
+
+/* =====================================
+   GENERAL CARDS
+   ===================================== */
+
+
+.dashboard-card {
+
+    background:
+
+        #ffffff;
+
+
+    border:
+
+        1px solid
+
+        #e5e5e7;
+
+
+    border-radius:
+
+        20px;
+
+
+    padding:
+
+        24px;
+
+
+}
+
+
+
+
+
+
+
+
+/* =====================================
+   GRID HELPERS
+   ===================================== */
+
+
+.dashboard-grid {
+
+    display:
+
+        grid;
+
+
+    grid-template-columns:
+
+        repeat(3,1fr);
+
+
+    gap:
+
+        20px;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================
+   BUTTONS
+   ===================================== */
+
+
+.athlos-button {
+
+    border:
+
+        none;
+
+
+    background:
+
+        #000;
+
+
+    color:
+
+        white;
+
+
+    padding:
+
+        14px 24px;
+
+
+    border-radius:
+
+        999px;
+
+
+    font-size:
+
+        15px;
+
+
+    font-weight:
+
+        600;
+
+
+    cursor:
+
+        pointer;
+
+
+    transition:
+
+        opacity .2s ease;
+
+}
+
+
+
+.athlos-button:hover {
+
+    opacity:
+
+        0.8;
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================
+   RESULTS EMPTY STATES
+   ===================================== */
+
+
+.results-empty {
+
+    padding:
+
+        40px;
+
+
+    text-align:
+
+        center;
+
+
+    color:
+
+        #6e6e73;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================
+   LOADING RESULTS
+   ===================================== */
+
+
+.results-loading {
+
+    min-height:
+
+        400px;
+
+
+    display:
+
+        flex;
+
+
+    align-items:
+
+        center;
+
+
+    justify-content:
+
+        center;
+
+
+}
+
+
+
+
+
+
+
+
+/* =====================================
+   MOBILE
+   ===================================== */
+
+
+@media(max-width:900px){
+
+
+
+    .dashboard-header h1 {
+
+        font-size:
+
+            36px;
+
+    }
+
+
+
+
+    .profile-stats {
+
+
+        grid-template-columns:
+
+            repeat(2,1fr);
+
+
+    }
+
+
+
+    .dashboard-grid {
+
+
+        grid-template-columns:
+
+            1fr;
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+@media(max-width:500px){
+
+
+
+    .athlos-dashboard {
+
+
+        padding:
+
+            24px 16px 60px;
+
+
+    }
+
+
+
+
+
+    .profile-stats {
+
+
+        grid-template-columns:
+
+            1fr;
+
+
+    }
+
+
+
+    .dashboard-header h1 {
+
+
+        font-size:
+
+            30px;
+
+
+    }
+
+
+}
+
+.dashboard-layout{
+
+max-width:1200px;
+
+margin:auto;
+
+padding:40px;
+
+}
+
+
+
+.dashboard-two-column{
+
+display:grid;
+
+grid-template-columns:
+
+repeat(2,1fr);
+
+gap:24px;
+
+margin:24px 0;
+
+}
+
+
+
+.dashboard-section{
+
+background:white;
+
+border:1px solid #e8e8e8;
+
+border-radius:24px;
+
+padding:32px;
+
+margin-bottom:24px;
+
+}
+
+
+
+
+.section-header h2{
+
+font-size:28px;
+
+margin-bottom:8px;
+
+}
+
+
+.section-header p{
+
+color:#666;
+
+}
+
+
+
+
+@media(max-width:900px){
+
+
+.dashboard-two-column{
+
+grid-template-columns:1fr;
+
+}
+
+
+.dashboard-layout{
+
+padding:20px;
+
+}
+
+
+}

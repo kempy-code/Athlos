@@ -6,225 +6,163 @@ import { fileURLToPath } from "url";
 
 dotenv.config();
 
-console.log(
-    "Groq API key loaded:",
-    process.env.GROQ_API_KEY ? "YES" : "NO"
-);
+// ======================================
+// PATHS
+// ======================================
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ======================================
+// APP
+// ======================================
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-const PORT = 3000;
-
-
-
-// ===============================
-// PATH SETUP
-// ===============================
-
-const __filename =
-    fileURLToPath(import.meta.url);
-
-
-const __dirname =
-    path.dirname(__filename);
-
-
-
-// ===============================
-// MIDDLEWARE
-// ===============================
-
-app.use(
-    express.json()
+console.log(
+    "Groq API key:",
+    process.env.GROQ_API_KEY ? "Loaded ✓" : "Missing ✗"
 );
 
+// ======================================
+// MIDDLEWARE
+// ======================================
+
+app.use(express.json());
 
 app.use(
     express.static(
-        path.join(
-            __dirname,
-            "public"
-        )
+        path.join(__dirname, "public")
     )
 );
 
+// ======================================
+// GROQ
+// ======================================
 
-
-// ===============================
-// GROQ SETUP
-// ===============================
-
-const groq =
-new Groq({
-
-    apiKey:
-    process.env.GROQ_API_KEY
-
+const groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY
 });
 
+// ======================================
+// TEST
+// ======================================
 
-
-
-// ===============================
-// TEST ROUTE
-// ===============================
-
-app.get(
-"/api/test",
-(req,res)=>{
+app.get("/api/test", (req, res) => {
 
     res.json({
-
-        status:
-        "Athlos backend running"
-
+        success: true,
+        message: "Athlos backend running"
     });
 
 });
 
+// ======================================
+// CHAT
+// ======================================
 
+app.post("/api/chat", async (req, res) => {
 
+    try {
 
-// ===============================
-// AI GENERATION
-// ===============================
+        const { profile } = req.body;
 
-app.post(
-"/api/chat",
-async(req,res)=>{
+        if (!profile) {
+            return res.status(400).json({
+                error: "No athlete profile supplied."
+            });
+        }
 
+        const completion =
+            await groq.chat.completions.create({
 
-try{
+                model: "llama-3.3-70b-versatile",
 
+                temperature: 0.2,
 
-const {
-    profile
-}
-=
-req.body;
+                max_tokens: 8000,
 
+                messages: [
 
-
-if(!profile){
-
-    return res.status(400)
-    .json({
-
-        error:
-        "No athlete profile supplied"
-
-    });
-
-}
-
-
-
-const completion =
-await groq.chat.completions.create({
-
-model:
-"llama-3.3-70b-versatile",
-
-
-
-messages:[
-
-
-{
-
-role:"system",
-
-content:
-`
+                    {
+                        role: "system",
+                        content: `
 You are Athlos AI.
 
-You are an elite fitness programming engine.
-
-Your job is to convert athlete onboarding data into a structured training database.
-
-IMPORTANT RULES:
-
-- Return ONLY valid JSON.
-- No markdown.
-- No explanations.
-- No comments.
-- Every field must exist.
-- Use null when information is unavailable.
+You are an elite hybrid athlete coach specialising in:
+- endurance training
+- strength development
+- hypertrophy
+- HYROX preparation
+- running performance
+- athletic conditioning
+- recovery optimisation
 
 
-Return this exact structure:
+Your task is to convert athlete onboarding data into a complete personalised training dashboard.
+
+Return ONLY valid JSON.
+
+Do not use markdown.
+Do not add explanations.
+Do not add comments.
+
+Every field must exist.
+Never return empty strings.
+Never return null.
+Create realistic values when information is missing.
+
+
+OUTPUT FORMAT:
 
 
 {
-"program_metadata":{
-
 "program_name":"",
-"created_date":"",
-"duration_weeks":"",
+"program_duration":"",
+"training_days":0,
+"session_length":"",
+"available_days":[],
+
+"athlete_summary":{
+
+"goal":"",
+"experience":"",
 "training_type":"",
-"level":"",
 "focus":"",
-"equipment":"",
 "coach_notes":""
 
 },
-
-
-"athlete_profile":{
-
-"age":"",
-"gender":"",
-"height":"",
-"weight":"",
-"experience":"",
-"training_history":"",
-"previous_programs":""
-
-},
-
-
-"goals_constraints":{
-
-"primary_goal":"",
-"timeline":"",
-"event":"",
-"target":"",
-"limitations":"",
-"injuries":"",
-"availability":""
-
-},
-
-
-"weekly_schedule":[
-
-{
-
-"week":"",
-"day":"",
-"session":"",
-"duration":"",
-"intensity":"",
-"exercises":[]
-
-}
-
-],
-
 
 
 "workouts":[
 
 {
 
-"id":"",
+"day":"",
 "name":"",
 "type":"",
 "purpose":"",
 "duration":"",
 "warmup":"",
-"main_work":"",
+
+"exercises":[
+
+{
+
+"name":"",
+"category":"",
+"equipment":"",
+"muscles":"",
+"sets":"",
+"reps":"",
+"rest":"",
+"instructions":""
+
+}
+
+],
+
 "cooldown":"",
 "progression":""
 
@@ -234,26 +172,42 @@ Return this exact structure:
 
 
 
-"exercise_library":[
+"progression":{
+
+
+"weekly_training_load":[
 
 {
 
-"name":"",
-"category":"",
-"equipment":"",
-"muscles":"",
-"instructions":"",
-"sets":"",
-"reps":"",
-"rest":""
+"week":1,
+"volume":"",
+"intensity":1,
+"focus":""
 
 }
 
 ],
 
 
+"milestones":[
 
-"nutrition_targets":{
+{
+
+"week":"",
+"goal":"",
+"measurement":"",
+"target":""
+
+}
+
+]
+
+},
+
+
+
+
+"nutrition":{
 
 "calories":"",
 "protein":"",
@@ -266,30 +220,42 @@ Return this exact structure:
 
 
 
+
 "recovery":{
 
 "sleep":"",
 "mobility":"",
 "rest_days":"",
 "injury_management":"",
-"recovery_tips":[]
+
+"tips":[
+
+""
+
+]
 
 },
 
 
 
-"progress_milestones":[
+
+"exercise_library":[
 
 {
 
-"week":"",
-"goal":"",
-"measurement":"",
-"target":""
+"name":"",
+"category":"",
+"equipment":"",
+"muscles":"",
+"sets":"",
+"reps":"",
+"rest":"",
+"instructions":""
 
 }
 
 ],
+
 
 
 
@@ -303,211 +269,219 @@ Return this exact structure:
 
 }
 
-],
-
-
-
-"education":[
-
-{
-
-"title":"",
-"content":""
-
-}
-
 ]
 
 }
 
 
-Create a realistic personalised plan from the athlete data.
+
+
+
+IMPORTANT GENERATION RULES:
+
+
+TRAINING:
+
+- Match workouts to the athlete's available days.
+- Only schedule training on available days.
+- Create rest days automatically.
+- Generate exactly one workout object per training day.
+- Each workout must contain at least 3 exercises.
+- Exercises must contain sets, reps, rest and instructions.
+- Make sessions realistic for the athlete goal.
+- Include warmup, cooldown and progression.
+
+
+CALENDAR:
+
+Every workout MUST have:
+
+day:
+Monday / Tuesday / Wednesday / Thursday / Friday / Saturday / Sunday
+
+
+ANALYTICS:
+
+Generate measurable progression data.
+
+weekly_training_load must contain:
+
+- week number
+- training volume
+- intensity score from 1-10
+- weekly focus
+
+
+Create data for every week of the program.
+
+
+NUTRITION:
+
+Create realistic athlete nutrition targets.
+
+Include:
+- calories
+- protein
+- carbohydrates
+- fat
+- hydration
+- coach notes
+
+
+RECOVERY:
+
+Include:
+- sleep recommendation
+- mobility routine
+- rest days
+- injury management
+- recovery tips
+
+
+EXERCISE LIBRARY:
+
+Generate at least 12 exercises.
+
+Each exercise must include:
+- name
+- category
+- equipment
+- muscles
+- sets
+- reps
+- rest
+- instructions
+
+
+ACHIEVEMENTS:
+
+Generate exactly 8 achievements.
+
+Each achievement must include:
+
+name:
+description:
+requirement:
+
+
+Examples:
+
+"Complete first month"
+"Run a new personal best"
+"Complete 20 sessions"
+
+
+Make the output look like a premium professional coaching platform.
+
 `
+                    },
 
+                    {
+                        role: "user",
+                        content: JSON.stringify(profile, null, 2)
+                    }
 
-},
+                ]
 
+            });
 
-{
+        let response =
+            completion.choices[0].message.content;
 
+        response = response
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
 
-role:"user",
+        let parsed;
 
-content:
-JSON.stringify(
-profile,
-null,
-2
-)
+        try {
 
-}
+            parsed = JSON.parse(response);
 
-],
+        }
 
+        catch {
 
-temperature:
-0.2,
+            console.error("AI returned invalid JSON:");
+            console.error(response);
 
+            return res.status(500).json({
 
-max_tokens:
-8000
+                error: "AI returned invalid JSON.",
 
+                raw: response
 
-});
+            });
 
+        }
 
+        res.json({
 
+            success: true,
 
+            plan: parsed
 
-let aiResponse =
-completion
-.choices[0]
-.message
-.content;
+        });
 
+    }
 
+    catch (error) {
 
-// Remove accidental markdown
+        console.error(error);
 
-aiResponse =
-aiResponse
-.replace(
-/```json/g,
-""
-)
-.replace(
-/```/g,
-""
-)
-.trim();
+        res.status(500).json({
 
+            error: "Groq request failed."
 
+        });
 
-
-let parsed;
-
-
-try{
-
-
-parsed =
-JSON.parse(
-aiResponse
-);
-
-
-}
-
-catch(error){
-
-
-console.log(
-"JSON parsing failed"
-);
-
-
-console.log(
-aiResponse
-);
-
-
-
-return res.status(500)
-.json({
-
-error:
-"AI returned invalid JSON",
-
-raw:
-aiResponse
+    }
 
 });
 
+// ======================================
+// FRONTEND
+// ======================================
 
-}
+app.get("/", (req, res) => {
 
-
-
-
-res.json({
-
-success:true,
-
-plan:parsed
-
-});
-
-
-
-}
-
-
-
-catch(error){
-
-
-console.error(
-"Groq Error:"
-);
-
-
-console.error(
-error
-);
-
-
-
-res.status(500)
-.json({
-
-error:
-"AI request failed"
+    res.sendFile(
+        path.join(
+            __dirname,
+            "public",
+            "index.html"
+        )
+    );
 
 });
 
+// Catch every non-API route
 
-}
+app.get(/^(?!\/api).*/, (req, res) => {
 
-
-
-});
-
-
-
-
-
-// ===============================
-// FRONTEND FALLBACK
-// ===============================
-
-app.get(
-"/",
-(req,res)=>{
-
-res.sendFile(
-path.join(
-__dirname,
-"public",
-"index.html"
-)
-);
+    res.sendFile(
+        path.join(
+            __dirname,
+            "public",
+            "index.html"
+        )
+    );
 
 });
 
+// ======================================
+// START
+// ======================================
 
+app.listen(PORT, () => {
 
-
-
-// ===============================
-// START SERVER
-// ===============================
-
-app.listen(
-PORT,
-()=>{
-
-console.log(
-`Server running on http://localhost:${PORT}`
-);
+    console.log("");
+    console.log("====================================");
+    console.log(" Athlos Server Running");
+    console.log("====================================");
+    console.log(` Local: http://localhost:${PORT}`);
+    console.log("====================================");
+    console.log("");
 
 });

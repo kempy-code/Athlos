@@ -1,0 +1,52 @@
+/* ===========================================
+   ATHLOS CHIPS
+=========================================== */
+
+
+.chip-option{
+
+    appearance:none;
+    -webkit-appearance:none;
+
+    border:1px solid #e5e5e5;
+
+    background:#ffffff;
+
+    color:#111111;
+
+    border-radius:999px;
+
+    padding:12px 20px;
+
+    font-family:Inter, sans-serif;
+
+    font-size:15px;
+
+    font-weight:500;
+
+    cursor:pointer;
+
+    transition:
+        background .2s ease,
+        border-color .2s ease,
+        transform .15s ease;
+
+}
+
+
+.chip-option:hover{
+
+    background:#f5f5f5;
+
+}
+
+
+.chip-option.selected{
+
+    background:#111111;
+
+    color:white;
+
+    border-color:#111111;
+
+}

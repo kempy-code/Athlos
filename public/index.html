@@ -13,7 +13,11 @@
     </title>
 
 
-    <!-- Main Styles -->
+
+    <!-- =====================================
+         CORE CSS
+    ===================================== -->
+
 
     <link rel="stylesheet" href="./css/style.css">
 
@@ -28,7 +32,34 @@
     <link rel="stylesheet" href="./css/animations.css">
 
 
+
+    <!-- =====================================
+         RESULTS DASHBOARD CSS
+    ===================================== -->
+
+
+    <link rel="stylesheet" href="./css/results/results.css">
+
+    <link rel="stylesheet" href="./css/results/calendar.css">
+
+    <link rel="stylesheet" href="./css/results/charts.css">
+
+    <link rel="stylesheet" href="./css/results/tables.css">
+
+    <link rel="stylesheet" href="./css/results/workouts.css">
+
+    <link rel="stylesheet" href="./css/results/nutrition.css">
+
+    <link rel="stylesheet" href="./css/results/recovery.css">
+
+    <link rel="stylesheet" href="./css/results/exercises.css">
+
+    <link rel="stylesheet" href="./css/results/achievements.css">
+
+
 </head>
+
+
 
 
 <body>
@@ -37,9 +68,10 @@
 <div class="app">
 
 
-    <!-- =================================
+
+    <!-- =====================================
          HEADER
-    ================================= -->
+    ===================================== -->
 
 
     <header class="athlos-header">
@@ -67,18 +99,20 @@
 
 
 
-    <!-- =================================
-         PROGRESS
-    ================================= -->
+    <!-- =====================================
+         ONBOARDING PROGRESS
+    ===================================== -->
 
 
-    <div class="progress-container">
+    <div 
+    class="progress-container"
+    id="onboarding-progress">
 
 
         <div class="progress-track">
 
 
-            <div 
+            <div
             id="progress-bar"
             class="progress-bar">
             </div>
@@ -103,15 +137,25 @@
 
 
 
-    <!-- =================================
-         QUESTION CARD
-    ================================= -->
+
+
+    <!-- =====================================
+         MAIN APPLICATION AREA
+    ===================================== -->
 
 
     <main class="container">
 
 
-        <section class="question-card">
+
+        <!-- =============================
+             ONBOARDING QUESTION CARD
+        ============================== -->
+
+
+        <section 
+        class="question-card"
+        id="question-section">
 
 
             <h1 id="question-title">
@@ -130,7 +174,7 @@
 
 
 
-            <div 
+            <div
             id="options"
             class="options-container">
 
@@ -156,6 +200,73 @@
         </section>
 
 
+
+
+
+        <!-- =============================
+             RESULTS DASHBOARD
+        ============================== -->
+
+
+        <section
+        id="results-section"
+        class="athlos-dashboard"
+        style="display:none;">
+
+
+
+            <div
+            id="summary">
+            </div>
+
+
+
+            <div
+            id="calendar">
+            </div>
+
+
+
+            <div
+            id="workouts">
+            </div>
+
+
+
+            <div
+            id="analytics">
+            </div>
+
+
+
+            <div
+            id="nutrition">
+            </div>
+
+
+
+            <div
+            id="recovery">
+            </div>
+
+
+
+            <div
+            id="exercises">
+            </div>
+
+
+
+            <div
+            id="achievements">
+            </div>
+
+
+
+        </section>
+
+
+
     </main>
 
 
@@ -164,9 +275,11 @@
 
 
 
-    <!-- =================================
+
+
+    <!-- =====================================
          FOOTER
-    ================================= -->
+    ===================================== -->
 
 
     <footer class="athlos-footer">
@@ -192,9 +305,29 @@
 
 
 
-<!-- Application Entry -->
+
+
+
+<!-- =====================================
+     LIBRARIES
+===================================== -->
+
 
 <script 
+src="https://cdn.jsdelivr.net/npm/chart.js">
+</script>
+
+
+
+
+
+
+<!-- =====================================
+     ATHLOS APPLICATION
+===================================== -->
+
+
+<script
 type="module"
 src="./js/script.js">
 </script>
