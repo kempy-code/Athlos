@@ -364,9 +364,18 @@ export function loadState(){
 
 
     if(saved){
-
-
-        state = JSON.parse(saved);
+        try {
+            const parsed = JSON.parse(saved);
+            state = {
+                ...defaultState,
+                ...parsed,
+                profile: parsed?.profile && typeof parsed.profile === "object" ? parsed.profile : {},
+                completedQuestions: Array.isArray(parsed?.completedQuestions) ? parsed.completedQuestions : []
+            };
+        } catch (error) {
+            console.warn("Athlos: saved onboarding state was invalid and has been reset", error);
+            resetState();
+        }
 
 
     }

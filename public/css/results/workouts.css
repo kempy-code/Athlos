@@ -1,273 +1,72 @@
-// =====================================
-// ATHLOS WORKOUT RENDERER
-// public/js/results/workouts.js
-// =====================================
-
-
-export function renderWorkouts(
-
-    container,
-
-    workouts = []
-
-){
-
-
-    if(!container){
-
-        return;
-
-    }
-
-
-
-
-
-    container.innerHTML = `
-
-
-    <div class="dashboard-section">
-
-
-        <div class="section-header">
-
-
-            <h2>
-                Workout Library
-            </h2>
-
-
-            <p>
-                Detailed sessions from your program
-            </p>
-
-
-        </div>
-
-
-
-
-
-        <div class="workout-grid">
-
-
-        ${
-            workouts.length
-
-            ?
-
-            workouts.map((workout,index)=>{
-
-
-                return `
-
-
-                <article class="workout-card">
-
-
-                    <h3>
-
-                        ${
-                            workout.name ||
-                            `Session ${index+1}`
-
-                        }
-
-                    </h3>
-
-
-
-                    <span class="workout-type">
-
-                        ${
-                            workout.type ||
-                            "Training Session"
-
-                        }
-
-                    </span>
-
-
-
-
-
-                    <div class="workout-info">
-
-
-                        <p>
-
-                        <strong>
-                        Duration:
-                        </strong>
-
-                        ${
-                            workout.duration ||
-                            "-"
-                        }
-
-                        </p>
-
-
-
-                        <p>
-
-                        <strong>
-                        Focus:
-                        </strong>
-
-                        ${
-                            workout.purpose ||
-                            "-"
-                        }
-
-                        </p>
-
-
-                    </div>
-
-
-
-
-
-
-                    <div class="workout-section">
-
-
-                        <h4>
-                            Warm Up
-                        </h4>
-
-
-                        <p>
-
-                        ${
-                            workout.warmup ||
-                            "Dynamic warm up"
-
-                        }
-
-                        </p>
-
-
-                    </div>
-
-
-
-
-
-
-
-                    <div class="workout-section">
-
-
-                        <h4>
-                            Main Workout
-                        </h4>
-
-
-                        <ul>
-
-
-                        ${
-                            workout.exercises
-
-                            ?
-
-                            workout.exercises
-                            .map(ex=>`
-
-                                <li>
-
-                                ${
-                                    typeof ex === "string"
-                                    ?
-                                    ex
-                                    :
-                                    ex.name
-
-                                }
-
-                                </li>
-
-
-                            `)
-                            .join("")
-
-                            :
-
-                            "<li>No exercises</li>"
-
-                        }
-
-
-                        </ul>
-
-
-                    </div>
-
-
-
-
-
-
-
-                    <div class="workout-section">
-
-
-                        <h4>
-                            Cool Down
-                        </h4>
-
-
-                        <p>
-
-                        ${
-                            workout.cooldown ||
-                            "Recovery mobility"
-
-                        }
-
-                        </p>
-
-
-                    </div>
-
-
-
-
-                </article>
-
-
-                `;
-
-
-            })
-
-            .join("")
-
-            :
-
-            `
-
-            <p>
-            No workout data available.
-            </p>
-
-            `
-
-        }
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-    `;
-
-
-
+.workout-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+#home-tab .workout-grid { grid-template-columns: 1fr; }
+#home-tab .workout-card { max-width: 760px; }
+.workout-card {
+    min-width: 0;
+    padding: 24px;
+    border: 1px solid var(--dash-border);
+    border-radius: 21px;
+    background: linear-gradient(155deg, #fff, #fbfaf7);
+    box-shadow: 0 10px 28px rgba(31,29,24,.05);
+}
+.workout-header { padding-bottom: 18px; border-bottom: 1px solid var(--dash-border); }
+.workout-number { display: block; color: var(--dash-accent) !important; font-size: 11px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+.workout-card h3 { margin: 8px 0 11px; font-size: clamp(21px, 2.5vw, 27px); line-height: 1.15; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.workout-type { display: inline-flex; padding: 6px 10px; border-radius: 999px; background: var(--dash-accent-soft); color: var(--dash-accent) !important; font-size: 12px; font-weight: 700; }
+.workout-info { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin: 18px 0; }
+.workout-info > div { min-width: 0; padding: 13px 14px; border-radius: 13px; background: var(--dash-surface-soft); }
+.workout-info strong { display: block; margin-bottom: 4px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.workout-info span { display: block; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+.workout-section { margin-top: 20px; }
+.workout-section h4 { margin: 0 0 10px; font-size: 12px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+.workout-section p { margin: 0; font-size: 14px; line-height: 1.65; }
+.exercise-list { display: flex; flex-direction: column; gap: 9px; }
+.exercise-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; min-width: 0; padding: 13px 14px; border: 1px solid var(--dash-border); border-radius: 14px; background: #fff; }
+.exercise-name { min-width: 0; }
+.exercise-name h5 { margin: 0; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
+.exercise-name small { color: var(--dash-muted); }
+.exercise-stats { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+.exercise-stats span { white-space: nowrap; padding: 5px 8px; border-radius: 8px; background: var(--dash-surface-soft); font-size: 11px; font-weight: 650; }
+.workout-start { width: 100%; margin-top: 22px; padding: 13px; border: 1px solid var(--dash-text); border-radius: 12px; background: var(--dash-text); color: #fff; font-weight: 750; cursor: pointer; }
+.workout-start:hover { background: #303136; }
+
+body.modal-open { overflow: hidden; }
+.workout-modal { --dash-text:#191a1d; --dash-muted:#686b73; --dash-border:#e5e3dc; --dash-accent:#e64b16; --dash-accent-soft:#fff0e9; position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; overflow-y: auto; background: rgba(25,26,29,.55); backdrop-filter: blur(8px); }
+.workout-modal-panel { position: relative; width: min(720px,100%); max-height: calc(100vh - 40px); padding: clamp(22px,4vw,34px); overflow-y: auto; border: 1px solid var(--dash-border); border-radius: 24px; background: #fff; box-shadow: 0 30px 80px rgba(0,0,0,.2); }
+.modal-close { position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; border: 0; border-radius: 50%; background: #f3f2ee; font-size: 24px; cursor: pointer; }
+.modal-heading > span { color: var(--dash-accent); font-size: 11px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+.modal-heading h2 { margin: 7px 45px 7px 0; font-size: clamp(25px,4vw,34px); }
+.modal-heading p { margin: 0 0 24px; color: var(--dash-muted); }
+.live-timer{display:grid;grid-template-columns:auto 1fr;gap:12px 20px;align-items:center;margin:0 0 24px;padding:14px;border-radius:14px;background:#191a1d;color:#fff}.live-timer>div:first-child{display:grid}.live-timer span{color:#aaa!important;font-size:9px;font-weight:800;letter-spacing:.12em}.live-timer strong{color:#fff!important;font-size:26px;font-variant-numeric:tabular-nums}.timer-actions{display:flex;justify-content:flex-end;gap:6px}.timer-actions button{padding:7px 9px;border:1px solid #ffffff22;border-radius:8px;background:#ffffff10;color:#fff;font-size:10px;font-weight:700;cursor:pointer}.live-timer p{grid-column:1/-1;margin:0;color:#ff9a72;font-size:11px}
+.workout-modal fieldset { margin: 0 0 22px; padding: 0; border: 0; }
+.workout-modal legend { margin-bottom: 13px; font-weight: 750; }
+.readiness-fieldset { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px 18px; }
+.readiness-fieldset legend { grid-column: 1/-1; }
+.readiness-control { display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; font-size: 12px; font-weight: 650; }
+.readiness-control input { grid-column: 1/-1; width: 100%; accent-color: var(--dash-accent); }
+.readiness-control output { color: var(--dash-muted); }
+.readiness-guidance { margin: -8px 0 22px; padding: 13px 15px; border-radius: 12px; background: var(--dash-accent-soft); color: var(--dash-text); font-size: 13px; line-height: 1.5; }
+.readiness-guidance strong{display:block;margin-bottom:4px}.readiness-guidance p{margin:0}.readiness-guidance ul{display:grid;gap:3px;margin:8px 0 0;padding-left:18px}
+.readiness-guidance.reduce { background: #fff0eb; }
+.readiness-guidance.adjust { background: #fff7df; }
+.modal-exercises { display: grid; gap: 8px; }
+.modal-exercise { display: grid; gap: 12px; padding: 13px; border: 1px solid var(--dash-border); border-radius: 13px; }
+.exercise-check{display:flex;align-items:center;gap:12px;cursor:pointer}.exercise-check span{display:grid;gap:3px}
+.modal-exercise:has(input:checked) { border-color: var(--dash-accent); background: var(--dash-accent-soft); }
+.modal-exercise input { width: 18px; height: 18px; accent-color: var(--dash-accent); }
+.modal-exercise small { color: var(--dash-muted); }
+.substitute-button{justify-self:start;padding:6px 9px;border:1px solid var(--dash-border);border-radius:8px;background:#fff;color:var(--dash-accent);font-size:10px;font-weight:750;cursor:pointer}.substitution-reason:not(:empty){color:#a63a15}
+.previous-session-note{margin:-6px 0 10px;color:var(--dash-muted);font-size:11px}.previous-value{color:#bc3b10!important;font-weight:700}
+.actual-performance{display:grid;grid-template-columns:90px 1fr 1fr;gap:8px;padding-top:10px;border-top:1px solid var(--dash-border)}.actual-performance label{display:grid;gap:4px;color:var(--dash-muted);font-size:10px;font-weight:700;text-transform:uppercase}.actual-performance input{width:100%;height:auto;padding:9px;border:1px solid var(--dash-border);border-radius:8px;background:#fff;color:var(--dash-text);font:inherit}
+.form-label { display: grid; gap: 7px; margin-top: 16px; font-size: 13px; font-weight: 700; }
+.form-label select,.form-label textarea { width: 100%; padding: 12px; border: 1px solid var(--dash-border); border-radius: 11px; background: #fff; color: var(--dash-text); font: inherit; }
+.modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px; }
+.modal-actions .primary-button { margin: 0; }
+@media (max-width: 560px) { .workout-modal { padding: 0; place-items: end center; } .workout-modal-panel { max-height: 94vh; border-radius: 22px 22px 0 0; } .readiness-fieldset,.modal-actions,.actual-performance { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .workout-grid { grid-template-columns: 1fr; } }
+@media (max-width: 520px) {
+    .workout-card { padding: 18px; border-radius: 17px; }
+    .workout-info { grid-template-columns: 1fr; }
+    .exercise-row { align-items: flex-start; flex-direction: column; }
+    .exercise-stats { justify-content: flex-start; }
 }

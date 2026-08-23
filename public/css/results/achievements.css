@@ -1,0 +1,24 @@
+.milestone-grid, .achievement-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 14px 0 26px; }
+.milestone-card, .achievement-card { min-width: 0; padding: 18px; border: 1px solid var(--dash-border); border-radius: 16px; background: var(--dash-surface-soft); }
+.milestone-card strong { color: var(--dash-accent); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.milestone-card h4, .achievement-card h4 { margin: 8px 0 5px; font-size: 16px; line-height: 1.35; overflow-wrap: anywhere; }
+.milestone-card p, .achievement-card p { margin: 0 0 8px; font-size: 13px; line-height: 1.5; }
+.milestone-card span, .achievement-card span { font-size: 12px; }
+.achievement-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; background: #fff; font-size: 19px; }
+@media (max-width: 820px) { .milestone-grid,.achievement-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 520px) { .milestone-grid,.achievement-grid { grid-template-columns: 1fr; } }
+.progress-stat-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
+.progress-stat { padding: 16px; border: 1px solid var(--dash-border); border-radius: 14px; background: var(--dash-surface-soft); }
+.progress-stat span { display: block; font-size: 10px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+.progress-stat strong { display: block; margin-top: 6px; font-size: 20px; text-transform: capitalize; }
+.completion-track { height: 9px; margin: 16px 0 26px; overflow: hidden; border-radius: 999px; background: var(--dash-surface-soft); }
+.completion-track span { display: block; height: 100%; border-radius: inherit; background: var(--dash-accent); }
+.progress-summary h3 { margin: 0 0 12px; }
+.workout-history { display: grid; gap: 8px; }
+.history-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px; border: 1px solid var(--dash-border); border-radius: 13px; }
+.history-row > div { display: grid; gap: 3px; }
+.history-row > div:last-child { text-align: right; }
+.history-row span { font-size: 12px; }
+.empty-message { padding: 18px; border-radius: 13px; background: var(--dash-surface-soft); }
+@media (max-width: 720px) { .progress-stat-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 440px) { .progress-stat-grid { grid-template-columns: 1fr; } .history-row { align-items: flex-start; flex-direction: column; } .history-row > div:last-child { text-align: left; } }

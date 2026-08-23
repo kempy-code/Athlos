@@ -1,0 +1,12 @@
+{
+  "name": "Athlos AI Athlete Coach",
+  "short_name": "Athlos",
+  "description": "Personalised training, readiness and athlete coaching.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f7f4",
+  "theme_color": "#17171d",
+  "icons": [
+    { "src": "/athlos-mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

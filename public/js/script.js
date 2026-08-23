@@ -29,9 +29,16 @@ import {
 
 import {
 
-    getState
+    getState,
+    loadState,
+    finishQuiz as markQuizFinished
 
 } from "./state.js";
+
+import { hydrateAppData, loadPlan, savePlan } from "./appStore.js";
+import { getCurrentUser, renderAuth } from "./authClient.js";
+import { demoPlan } from "./demoPlan.js";
+import { seedDemoData } from "./appStore.js";
 
 
 
@@ -178,9 +185,18 @@ let currentAnswer = null;
 // =====================================
 
 
-function start(){
+async function start(){
 
-
+    loadState();
+    const user=await getCurrentUser();
+    if(!user){renderAuth(document.querySelector(".container"));return;}
+    document.body.classList.remove("public-site");
+    await hydrateAppData();
+    const savedPlan = loadPlan();
+    if (savedPlan) {
+        loadDashboard(savedPlan);
+        return;
+    }
     initQuestionEngine();
 
 
@@ -632,54 +648,42 @@ function updateProgress(){
 
 async function finishQuiz(){
 
+    const container =
+        document.querySelector(".container");
 
+    if(!container){
 
-    document
-    .querySelector(".container")
-    .innerHTML = `
+        console.error(
+            "Athlos: Main container '.container' was not found"
+        );
 
+        return;
+
+    }
+
+    container.innerHTML = `
 
         <div class="results">
-
 
             <h1>
                 Building your Athlos plan...
             </h1>
 
-
             <div id="loading"></div>
-
 
         </div>
 
-
     `;
 
-
-
-
-
     renderLoading(
-
         document.getElementById(
             "loading"
         )
-
     );
-
-
-
-
 
     await generatePlan();
 
-
-
 }
-
-
-
-
 
 
 
@@ -751,8 +755,7 @@ async function generatePlan(){
 
 
 
-        const data =
-            await response.json();
+        const data = await response.json().catch(() => ({}));
 
 
 
@@ -760,11 +763,11 @@ async function generatePlan(){
 
 
 
-        if(data.error){
+        if(!response.ok || data.error){
 
 
             throw new Error(
-                data.error
+                data.details || data.error || `Request failed (${response.status})`
             );
 
 
@@ -774,6 +777,9 @@ async function generatePlan(){
             "AI PLAN:",
             data.plan
         );
+
+        savePlan(data.plan);
+        markQuizFinished();
 
         showProgram(
 
@@ -798,22 +804,30 @@ async function generatePlan(){
 
 
 
-        document
-        .querySelector(".results")
-        .innerHTML = `
+        const results =
+            document.querySelector(".results");
 
+        if(results){
 
-            <h1>
-                Error generating program
-            </h1>
+            results.innerHTML = `
+                <div class="generation-error">
+                    <span aria-hidden="true">!</span>
+                    <h1>We couldn’t build your plan</h1>
+                    <p id="generation-error-message"></p>
+                    <div class="generation-actions">
+                        <button id="retry-generation" class="next-button" type="button">Try again</button>
+                        <button id="restart-onboarding" class="secondary-button" type="button">Start over</button>
+                    </div>
+                </div>
+            `;
+            results.querySelector("#generation-error-message").textContent = error.message || "Please check that the Athlos server is running, then try again.";
+            results.querySelector("#retry-generation").addEventListener("click", finishQuiz);
+            results.querySelector("#restart-onboarding").addEventListener("click", () => {
+                localStorage.removeItem("athlos_state");
+                window.location.reload();
+            });
 
-
-            <p>
-                ${error.message}
-            </p>
-
-
-        `;
+        }
 
 
 
@@ -836,111 +850,23 @@ async function generatePlan(){
 
 function showProgram(plan){
 
+    const container =
+        document.querySelector(".container");
 
+    if(!container){
 
-    document
-    .querySelector(".container")
-    .innerHTML = "";
-
-
-
-
-
-    const dashboard =
-        document.createElement(
-            "div"
+        console.error(
+            "Athlos: Main container '.container' was not found"
         );
 
+        return;
 
+    }
 
-
-
-    dashboard.className =
-        "athlos-dashboard";
-
-
-
-
-
-
-    dashboard.innerHTML = `
-
-
-
-        <section class="dashboard-header">
-
-
-            <h1>
-                Your Athlos Program
-            </h1>
-
-
-
-            <p>
-                Personalised AI training plan
-            </p>
-
-
-
-        </section>
-
-
-
-
-
-        <section id="summary"></section>
-
-
-        <section id="calendar"></section>
-
-
-        <section id="workouts"></section>
-
-
-        <section id="analytics"></section>
-
-
-        <section id="nutrition"></section>
-
-
-        <section id="recovery"></section>
-
-
-        <section id="exercises"></section>
-
-
-        <section id="achievements"></section>
-
-
-
-    `;
-
-
-
-
-
-
-
-    document
-    .querySelector(".container")
-    .appendChild(
-        dashboard
-    );
-
-
-
-
-
-
+    document.getElementById("onboarding-progress")?.setAttribute("hidden", "");
     loadDashboard(plan);
 
-
-
 }
-
-
-
-
 
 
 
@@ -948,6 +874,16 @@ function showProgram(plan){
 // =====================================
 // RUN
 // =====================================
+
+window.addEventListener("athlos:open-demo", () => {
+    seedDemoData(demoPlan);
+    document.body.classList.remove("public-site");
+    showProgram(demoPlan);
+});
+
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("/service-worker.js").catch(() => {}));
+}
 
 
 start();

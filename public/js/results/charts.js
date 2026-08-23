@@ -1,237 +1,441 @@
 // =====================================
 // ATHLOS ANALYTICS CHARTS
+// public/js/results/charts.js
 // =====================================
 
 
-export function renderCharts(container, plan){
+let volumeChart;
+let intensityChart;
 
 
-console.log(
-    "Charts loading",
-    plan
-);
 
 
+export function renderCharts(
 
-if(!container){
+    container,
 
-console.error(
-"Analytics container missing"
-);
+    analytics = {}
 
-return;
+){
 
-}
 
+    if(!container){
 
+        return;
 
-container.innerHTML = `
+    }
 
 
-<div class="dashboard-section">
 
+    console.log(
+        "Charts loading",
+        analytics
+    );
 
-<div class="section-header">
 
-<h2>
-Training Analytics
-</h2>
 
-<p>
-Your performance progression
-</p>
 
-</div>
 
+    container.innerHTML = `
 
 
-<div class="charts-grid">
+    <div class="dashboard-section">
 
 
-<div class="chart-card">
+        <div class="section-header">
 
-<h3>
-Weekly Training Volume
-</h3>
+            <h2>
+                Training Analytics
+            </h2>
 
+            <p>
+                Your performance progression
+            </p>
 
-<canvas id="volumeChart"></canvas>
+        </div>
 
 
-</div>
 
 
 
+        <div class="chart-grid">
 
 
-<div class="chart-card">
+            <div class="chart-card">
 
-<h3>
-Training Intensity
-</h3>
+                <h3>
+                    Weekly Training Volume
+                </h3>
 
 
-<canvas id="intensityChart"></canvas>
+                <canvas id="volume-chart"></canvas>
 
 
-</div>
+            </div>
 
 
 
-</div>
 
 
-</div>
 
+            <div class="chart-card">
 
-`;
 
+                <h3>
+                    Training Intensity
+                </h3>
 
 
+                <canvas id="intensity-chart"></canvas>
 
-if(typeof Chart === "undefined"){
 
+            </div>
 
-console.error(
-"Chart.js not loaded"
-);
 
+        </div>
 
-return;
 
-}
 
 
 
 
+        <div class="milestone-chart">
 
-const weeks =
-plan.progression?.weekly_training_load;
 
+            <h3>
+                Progress Milestones
+            </h3>
 
 
-console.log(
-"Chart data:",
-weeks
-);
+            ${
+                renderMilestones(
+                    analytics.milestones
+                )
+            }
 
 
+        </div>
 
-if(!weeks || weeks.length===0){
 
 
-console.error(
-"No progression data"
-);
 
+    </div>
 
-return;
 
+    `;
 
-}
 
 
 
 
+    createVolumeChart(
+        analytics.volume || []
+    );
 
-new Chart(
 
-document.getElementById(
-"volumeChart"
-),
+    createIntensityChart(
+        analytics.intensity || []
+    );
 
-{
-
-type:"line",
-
-
-data:{
-
-
-labels:
-
-weeks.map(
-w=>`Week ${w.week}`
-),
-
-
-datasets:[
-
-{
-
-label:"Training Volume",
-
-data:
-
-weeks.map(
-w=>Number(w.volume)||0
-),
-
-tension:0.4
-
-}
-
-]
-
-}
-
-
-
-}
-
-);
-
-
-
-
-
-
-new Chart(
-
-document.getElementById(
-"intensityChart"
-),
-
-{
-
-type:"bar",
-
-
-data:{
-
-
-labels:
-
-weeks.map(
-w=>`Week ${w.week}`
-),
-
-
-datasets:[
-
-{
-
-label:"Intensity /10",
-
-data:
-
-weeks.map(
-w=>Number(w.intensity)||0
-)
-
-}
-
-]
 
 
 }
 
 
 
+
+
+
+
+// =====================================
+// VOLUME GRAPH
+// =====================================
+
+
+function createVolumeChart(data){
+
+
+    const canvas =
+        document.getElementById(
+            "volume-chart"
+        );
+
+
+
+    if(!canvas){
+
+        return;
+
+    }
+
+
+
+
+
+    if(volumeChart){
+
+        volumeChart.destroy();
+
+    }
+
+
+
+
+
+    volumeChart =
+    new Chart(
+
+        canvas,
+
+        {
+
+            type:"line",
+
+
+            data:{
+
+
+                labels:
+                    data.map(
+                        x=>`Week ${x.week}`
+                    ),
+
+
+
+                datasets:[{
+
+                    label:
+                    "Training Volume",
+
+
+                    data:
+                    data.map(
+                        x=>x.value
+                    ),
+
+
+                    tension:0.3
+
+                }]
+
+
+            },
+
+
+
+            options:{
+
+
+                responsive:true,
+
+
+                plugins:{
+
+
+                    legend:{
+                        display:true
+                    }
+
+
+                }
+
+
+            }
+
+
+        }
+
+
+    );
+
+
+
 }
 
-);
 
+
+
+
+
+
+// =====================================
+// INTENSITY GRAPH
+// =====================================
+
+
+function createIntensityChart(data){
+
+
+    const canvas =
+        document.getElementById(
+            "intensity-chart"
+        );
+
+
+
+    if(!canvas){
+
+        return;
+
+    }
+
+
+
+
+
+    if(intensityChart){
+
+        intensityChart.destroy();
+
+    }
+
+
+
+
+
+    intensityChart =
+    new Chart(
+
+        canvas,
+
+        {
+
+            type:"bar",
+
+
+            data:{
+
+
+                labels:
+
+                    data.map(
+                        x=>`Week ${x.week}`
+                    ),
+
+
+
+                datasets:[{
+
+
+                    label:
+                    "Intensity",
+
+
+                    data:
+
+                    data.map(
+                        x=>x.value
+                    )
+
+
+                }]
+
+
+            },
+
+
+
+            options:{
+
+
+                responsive:true
+
+
+            }
+
+
+        }
+
+
+    );
+
+
+}
+
+
+
+
+
+
+
+
+// =====================================
+// MILESTONES
+// =====================================
+
+
+function renderMilestones(
+
+    milestones=[]
+
+){
+
+
+    if(
+        !Array.isArray(milestones) ||
+        milestones.length===0
+    ){
+
+        return `
+
+        <p>
+        No milestones available.
+        </p>
+
+        `;
+
+    }
+
+
+
+
+
+    return `
+
+
+    <div class="milestone-list">
+
+
+    ${
+        milestones.map(
+
+            milestone=>`
+
+
+            <div class="milestone-item">
+
+
+                <strong>
+                    Week ${milestone.week}
+                </strong>
+
+
+                <p>
+
+                    ${
+                        milestone.goal ||
+                        milestone.description ||
+                        "Progress target"
+
+                    }
+
+                </p>
+
+
+            </div>
+
+
+            `
+
+        ).join("")
+
+    }
+
+
+    </div>
+
+
+    `;
 
 
 }

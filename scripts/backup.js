@@ -1,0 +1,11 @@
+import { DatabaseSync } from "node:sqlite";
+import fs from "node:fs";
+import path from "node:path";
+const dataDir=process.env.DATA_DIR||path.join(process.cwd(),"data");
+const databasePath=path.join(dataDir,"athlos.db");
+if(!fs.existsSync(databasePath))throw new Error("Athlos database does not exist.");
+const backupDir=path.join(dataDir,"backups");fs.mkdirSync(backupDir,{recursive:true});
+const stamp=new Date().toISOString().replaceAll(":","-").replaceAll(".","-");
+const output=path.join(backupDir,`athlos-${stamp}.db`);
+const db=new DatabaseSync(databasePath);db.exec(`VACUUM INTO '${output.replaceAll("'","''")}'`);db.close();
+console.log(`Backup created: ${output}`);

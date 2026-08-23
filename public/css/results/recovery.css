@@ -1,0 +1,13 @@
+.recovery-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.recovery-card { display: flex; align-items: flex-start; gap: 14px; min-width: 0; padding: 18px; border: 1px solid var(--dash-border); border-radius: 16px; background: var(--dash-surface-soft); }
+.recovery-icon { flex: 0 0 auto; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: #fff; font-size: 21px; }
+.recovery-card > div:last-child { min-width: 0; }
+.recovery-card span { font-size: 11px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+.recovery-card p { margin: 5px 0 0; font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.recovery-tips { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--dash-border); }
+.recovery-tips h3 { margin: 0 0 13px; font-size: 18px; }
+.tips-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.recovery-tip { display: flex; align-items: flex-start; gap: 9px; padding: 12px; border-radius: 12px; background: var(--dash-surface-soft); }
+.recovery-tip span { display: grid; flex: 0 0 auto; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--dash-accent-soft); color: var(--dash-accent) !important; font-size: 11px; font-weight: 800; }
+.recovery-tip p { margin: 0; font-size: 13px; line-height: 1.5; }
+@media (max-width: 650px) { .recovery-grid,.tips-list { grid-template-columns: 1fr; } }

@@ -1,0 +1,11 @@
+.exercise-table { width: 100%; min-width: 720px; border-collapse: collapse; font-size: 13px; }
+.exercise-table th { padding: 12px 14px; border-bottom: 1px solid var(--dash-border); background: var(--dash-surface-soft); color: var(--dash-muted); font-size: 10px; font-weight: 750; letter-spacing: .07em; text-align: left; text-transform: uppercase; }
+.exercise-table th:first-child { border-radius: 11px 0 0 11px; }
+.exercise-table th:last-child { border-radius: 0 11px 11px 0; }
+.exercise-table td { padding: 14px; border-bottom: 1px solid var(--dash-border); color: var(--dash-muted); line-height: 1.4; }
+.exercise-table td:first-child { color: var(--dash-text); font-weight: 700; }
+.exercise-table tbody tr:last-child td { border-bottom: 0; }
+.exercise-table tbody tr:hover { background: #fbfaf7; }
+.dashboard-section:has(.exercise-table) { overflow-x: auto; }
+@media (max-width: 760px) { .exercise-table { min-width: 650px; } }
+.technique-library{display:grid;gap:8px;margin-top:28px}.technique-library>h3{margin:0 0 8px}.technique-card{border:1px solid var(--dash-border);border-radius:13px;background:#fff}.technique-card summary{display:flex;gap:10px;align-items:center;padding:13px;cursor:pointer}.technique-play{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#fff0e9;color:#bc3b10!important;font-size:10px}.technique-card summary div{display:grid}.technique-card small{font-size:10px}.technique-content{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 13px 13px}.technique-content>div{padding:11px;border-radius:10px;background:var(--dash-surface-soft)}.technique-content h4{margin:0 0 5px;font-size:11px}.technique-content p{margin:0;font-size:10px}.video-ready{grid-column:1/-1;color:#8a6a55!important;font-size:9px!important}@media(max-width:650px){.technique-content{grid-template-columns:1fr}}

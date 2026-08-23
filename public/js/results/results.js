@@ -3,515 +3,182 @@
 // public/js/results/results.js
 // =====================================
 
+import { createDashboard } from "./dashboard.js";
+import { normalisePlan } from "./normalisePlan.js";
+import { renderCalendar } from "./calendar.js";
+import { renderWorkouts } from "./workouts.js";
+import { renderNutrition } from "./nutrition.js";
+import { renderRecovery } from "./recovery.js";
+import { renderAchievements } from "./achievements.js";
+import { renderExercises } from "./exercises.js";
+import { renderProgress } from "./progress.js";
+import { openWorkoutModal } from "./workoutModal.js";
+import { clearPlan, getAppData, getWorkoutLogs, savePlan } from "../appStore.js";
+import { resetState } from "../state.js";
+import { renderCoach } from "./coach.js";
+import { logout } from "../authClient.js";
+import { renderAccount } from "./account.js";
+import { renderToolkit } from "./toolkit.js";
+import { renderActivityHistory } from "./activityHistory.js";
 
-// =====================================
-// IMPORTS
-// =====================================
+export function loadDashboard(rawPlan) {
 
-import {
-    renderCalendar
-} from "./calendar.js";
-
-
-import {
-    renderCharts
-} from "./charts.js";
-
-
-import {
-    renderWorkouts
-} from "./workouts.js";
-
-
-import {
-    renderNutrition
-} from "./nutrition.js";
-
-
-import {
-    renderRecovery
-} from "./recovery.js";
-
-
-import {
-    renderExercises
-} from "./exercises.js";
-
-
-import {
-    renderAchievements
-} from "./achievements.js";
-
-
-
-
-// =====================================
-// LOAD DASHBOARD
-// =====================================
-
-export function loadDashboard(plan){
-
-
-    if(!plan){
-
-        console.error(
-            "No Athlos plan received"
-        );
-
+    if (!rawPlan) {
+        console.error("Athlos: No plan received");
         return;
-
     }
 
+    const container = document.querySelector(".container");
 
-
-    console.log(
-        "Athlos dashboard loaded:",
-        plan
-    );
-
-
-
-    renderHeader(plan);
-
-
-    renderCalendarSection(plan);
-
-
-    renderWorkoutSection(plan);
-
-
-    renderAnalyticsSection(plan);
-
-
-    renderNutritionSection(plan);
-
-
-    renderRecoverySection(plan);
-
-
-    renderExerciseSection(plan);
-
-
-    renderAchievementSection(plan);
-
-
-}
-
-
-
-
-
-
-// =====================================
-// HEADER
-// =====================================
-
-
-function renderHeader(plan){
-
-
-    const container =
-        document.getElementById(
-            "summary"
-        );
-
-
-    if(!container){
-
+    if (!container) {
+        console.error("Athlos: Dashboard container '.container' was not found");
         return;
-
     }
 
-
-
-    container.innerHTML = `
-
-
-        <div class="athlos-profile-summary">
-
-
-            <div class="profile-title">
-
-
-                <h2>
-
-                    ${
-                        plan.program_name ||
-                        "Athlos Training Plan"
-                    }
-
-                </h2>
-
-
-                <p>
-
-                    AI personalised athlete program
-
-                </p>
-
-
-            </div>
-
-
-
-
-
-            <div class="profile-stats">
-
-
-                ${createStat(
-                    "Duration",
-                    plan.program_duration
-                )}
-
-
-
-                ${createStat(
-                    "Training Days",
-                    plan.training_days
-                )}
-
-
-
-                ${createStat(
-                    "Session Length",
-                    plan.session_length
-                )}
-
-
-
-                ${createStat(
-                    "Available Days",
-                    plan.available_days?.join(", ")
-                )}
-
-
-            </div>
-
-
-        </div>
-
-
-    `;
-
-
-}
-
-
-
-
-
-
-function createStat(label,value){
-
-
-    return `
-
-        <div class="profile-stat">
-
-            <span>
-                ${label}
-            </span>
-
-
-            <strong>
-                ${value || "-"}
-            </strong>
-
-
-        </div>
-
-    `;
-
-}
-
-
-
-
-
-
-// =====================================
-// CALENDAR
-// =====================================
-
-
-function renderCalendarSection(plan){
-
-
-    const container =
-        document.getElementById(
-            "calendar"
-        );
-
-
-    if(!container){
-
-        return;
-
+    const plan = normalisePlan(rawPlan);
+    const demoMode = Boolean(getAppData().demoMode);
+    const dashboard = createDashboard(plan);
+
+    container.replaceChildren(dashboard);
+
+    const getTab = id => dashboard.querySelector(`#${id}`);
+    const completedNames = new Set(getWorkoutLogs().filter(log => log.status === "completed").map(log => log.workoutName));
+    const nextWorkout = plan.workouts.find(workout => !completedNames.has(workout.name)) || plan.workouts[0];
+    const title = dashboard.querySelector("#next-workout-name");
+    const day = dashboard.querySelector("#next-workout-day");
+    const stats = dashboard.querySelector("#dashboard-stats");
+
+    if (title) {
+        title.textContent = nextWorkout?.name || "Training Session";
     }
 
-
-
-    renderCalendar(
-
-        container,
-
-        plan.workouts || []
-
-    );
-
-
-}
-
-
-
-
-
-
-// =====================================
-// WORKOUTS
-// =====================================
-
-
-function renderWorkoutSection(plan){
-
-
-    const container =
-        document.getElementById(
-            "workouts"
-        );
-
-
-    if(!container){
-
-        return;
-
+    if (day) {
+        day.textContent = nextWorkout?.day || nextWorkout?.type || "Workout";
     }
 
-
-
-    renderWorkouts(
-
-        container,
-
-        plan.workouts || []
-
-    );
-
-
-}
-
-
-
-
-
-
-// =====================================
-// ANALYTICS
-// =====================================
-
-
-function renderAnalyticsSection(plan){
-
-
-    const container =
-        document.getElementById(
-            "analytics"
-        );
-
-
-    if(!container){
-
-        return;
-
+    if (stats) {
+        stats.innerHTML = [
+            statCard("Duration", plan.metadata.duration),
+            statCard("Training Days", plan.metadata.trainingDays),
+            statCard("Calories", plan.nutrition.calories),
+            statCard("Sleep", plan.recovery.sleep)
+        ].join("");
     }
 
+    dashboard.querySelector("#start-next-workout-btn")?.addEventListener("click", () => {
+        if (nextWorkout) openWorkoutModal(nextWorkout, () => loadDashboard(rawPlan));
+    });
+    dashboard.querySelector("#start-over-btn")?.addEventListener("click", () => {
+        if (window.confirm("Create a new plan? Your current plan and workout history will be cleared.")) {
+            clearPlan();
+            resetState();
+            window.location.reload();
+        }
+    });
 
+    document.getElementById("onboarding-progress")?.setAttribute("hidden", "");
+    const home = getTab("home-tab");
 
-    renderCharts(
+    if (home) {
+        const homeWorkouts = document.createElement("div");
+        const homeRecovery = document.createElement("div");
+        const homeNutrition = document.createElement("div");
 
-        container,
-
-        plan.progression || {}
-
-    );
-
-
-}
-
-
-
-
-
-
-// =====================================
-// NUTRITION
-// =====================================
-
-
-function renderNutritionSection(plan){
-
-
-    const container =
-        document.getElementById(
-            "nutrition"
-        );
-
-
-    if(!container){
-
-        return;
-
+        home.replaceChildren(homeWorkouts, homeRecovery, homeNutrition);
+        renderWorkouts(homeWorkouts, nextWorkout ? [nextWorkout] : [], "Next workout");
+        renderRecovery(homeRecovery, plan.recovery);
+        renderNutrition(homeNutrition, plan.nutrition, true);
     }
 
+    const calendar = getTab("calendar-tab");
 
-
-    renderNutrition(
-
-        container,
-
-        plan.nutrition || {}
-
-    );
-
-
-}
-
-
-
-
-
-
-// =====================================
-// RECOVERY
-// =====================================
-
-
-function renderRecoverySection(plan){
-
-
-    const container =
-        document.getElementById(
-            "recovery"
-        );
-
-
-    if(!container){
-
-        return;
-
-    }
-
-
-
-    renderRecovery(
-
-        container,
-
-        plan.recovery || {}
-
-    );
-
-
-}
-
-
-
-
-
-
-// =====================================
-// EXERCISES
-// =====================================
-
-
-function renderExerciseSection(plan){
-
-
-    const container =
-        document.getElementById(
-            "exercises"
-        );
-
-
-    if(!container){
-
-        return;
-
-    }
-
-
-
-    const exercises = [];
-
-
-    if(plan.workouts){
-
-        plan.workouts.forEach(workout=>{
-
-
-            if(workout.exercises){
-
-                exercises.push(
-                    ...workout.exercises
-                );
-
-            }
-
-
+    if (calendar) {
+        renderCalendar(calendar, plan.workouts, movedWorkouts => {
+            const updated = { ...plan, workouts: movedWorkouts };
+            savePlan(updated);
+            loadDashboard(updated);
         });
-
     }
 
+    // dashboard.js defines workouts-tab; it does not define exercises-tab.
+    const workouts = getTab("workouts-tab");
 
+    if (workouts) {
+        renderWorkouts(workouts, plan.workouts);
+        const exerciseLibrary = document.createElement("div");
+        workouts.append(exerciseLibrary);
+        renderExercises(exerciseLibrary, plan.exercises);
+    }
 
-    renderExercises(
+    const nutrition = getTab("nutrition-tab");
 
-        container,
+    if (nutrition) {
+        renderNutrition(nutrition, plan.nutrition);
+    }
 
-        exercises
+    const progress = getTab("progress-tab");
 
-    );
+    if (progress) {
+        renderAchievements(progress, plan.achievements, plan.milestones);
+        renderProgress(progress, plan);
+    }
 
+    const activity=getTab("activity-tab");
+    if(activity)renderActivityHistory(activity, () => loadDashboard(rawPlan));
 
+    const coach=getTab("coach-tab");
+    if(coach)renderCoach(coach, { demoMode });
+    const toolkit=getTab("toolkit-tab");
+    if(toolkit)renderToolkit(toolkit, plan, () => loadDashboard(rawPlan));
+    const account=getTab("account-tab");
+    if(account) {
+        if (demoMode) account.innerHTML = `<section class="dashboard-section demo-account"><div class="section-header"><h2>Demo athlete</h2><p>This is realistic sample data for exploring Athlos. Create an account to build and securely save your own plan.</p></div><button class="primary-button" data-exit-demo type="button">Exit demo and create an account</button></section>`;
+        else renderAccount(account);
+    }
+
+    const accountBar=document.createElement("div");
+    accountBar.className="account-bar";
+    accountBar.innerHTML=demoMode ? `<span>Demo athlete · Sample training data</span><button type="button">Exit demo</button>` : `<span>Securely saved to your Athlos account</span><button type="button">Sign out</button>`;
+    accountBar.querySelector("button").addEventListener("click", demoMode ? exitDemo : logout);
+    dashboard.querySelector("[data-exit-demo]")?.addEventListener("click", exitDemo);
+    dashboard.prepend(accountBar);
+
+    dashboard.addEventListener("athlos:start-workout", event => {
+        openWorkoutModal(event.detail.workout, () => loadDashboard(rawPlan));
+    });
 }
 
+function exitDemo() {
+    clearPlan();
+    window.location.reload();
+}
 
+function statCard(title, value) {
+    return `
+        <div class="stat-card">
+            <span>${escapeHtml(title)}</span>
+            <strong>${escapeHtml(displayValue(value) || "-")}</strong>
+        </div>
+    `;
+}
 
-
-
-
-// =====================================
-// ACHIEVEMENTS
-// =====================================
-
-
-function renderAchievementSection(plan){
-
-
-    const container =
-        document.getElementById(
-            "achievements"
-        );
-
-
-    if(!container){
-
-        return;
-
+function displayValue(value) {
+    if (Array.isArray(value)) {
+        return value.map(displayValue).filter(Boolean).join(", ");
     }
 
+    if (value && typeof value === "object") {
+        return value.text || value.label || value.name || "";
+    }
 
+    return value == null ? "" : String(value);
+}
 
-    renderAchievements(
-
-        container,
-
-        plan.achievements || [],
-
-        plan.progression?.milestones || []
-
-    );
-
-
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }

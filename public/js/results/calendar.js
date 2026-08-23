@@ -1,5 +1,5 @@
 // =====================================
-// ATHLOS CALENDAR RENDERER
+// ATHLOS TRAINING CALENDAR
 // public/js/results/calendar.js
 // =====================================
 
@@ -8,7 +8,8 @@ export function renderCalendar(
 
     container,
 
-    workouts = []
+    workouts = [],
+    onMove = () => {}
 
 ){
 
@@ -18,8 +19,6 @@ export function renderCalendar(
         return;
 
     }
-
-
 
 
 
@@ -44,18 +43,25 @@ export function renderCalendar(
     container.innerHTML = `
 
 
-    <div class="dashboard-section">
+    <section class="dashboard-section">
 
 
         <div class="section-header">
 
+
             <h2>
+
                 Training Calendar
+
             </h2>
 
+
             <p>
-                Your weekly training structure
+
+                Your weekly training schedule
+
             </p>
+
 
         </div>
 
@@ -63,21 +69,22 @@ export function renderCalendar(
 
 
 
-        <div class="calendar-grid">
+
+
+        <div class="calendar-wrapper">
+
+
+            <div class="calendar-grid">
 
 
             ${
-                days.map(day=>{
+                days.map(day => {
 
 
                     const workout =
-                        workouts.find(
-
-                            w =>
-                            w.day?.toLowerCase()
-                            ===
-                            day.toLowerCase()
-
+                        findWorkout(
+                            day,
+                            workouts
                         );
 
 
@@ -87,33 +94,83 @@ export function renderCalendar(
 
                     <button
 
-                        class="calendar-day"
+                        class="calendar-card ${
+                            workout
+                            ?
+                            "training-day"
+                            :
+                            "rest-day"
 
-                        data-day="${day}"
+                        }"
+
+                        data-day="${escapeHtml(day)}"
+                        draggable="${workout ? "true" : "false"}"
+
 
                     >
 
 
-                        <span class="calendar-day-name">
+                        <span class="calendar-day">
 
-                            ${day}
+                            ${day.substring(0,3)}
 
                         </span>
 
 
 
-                        <strong>
 
-                            ${
-                                workout
-                                ?
-                                workout.name
-                                :
-                                "Rest Day"
 
-                            }
+                        ${
+                            workout
 
-                        </strong>
+                            ?
+
+                            `
+
+                            <h3>
+
+                                ${escapeHtml(workout.name || "Training Session")}
+
+                            </h3>
+
+
+                            <span class="calendar-type">
+
+                                ${escapeHtml(workout.type || "Training")}
+
+                            </span>
+
+
+                            <span class="calendar-duration">
+
+                                ${escapeHtml(workout.duration || "")}
+
+                            </span>
+
+                            `
+
+
+                            :
+
+
+                            `
+
+                            <h3>
+
+                                Rest
+
+                            </h3>
+
+
+                            <span class="calendar-type">
+
+                                Recovery
+
+                            </span>
+
+                            `
+
+                        }
 
 
 
@@ -124,9 +181,44 @@ export function renderCalendar(
 
 
                 }).join("")
+
             }
 
 
+            </div>
+
+
+
+
+
+
+
+            <div
+
+            id="calendar-details"
+
+            class="calendar-details">
+
+
+                <h3>
+
+                    Select a workout
+
+                </h3>
+
+
+                <p>
+
+                    Click a training day to view details.
+
+                </p>
+
+
+            </div>
+
+
+
+
 
         </div>
 
@@ -134,25 +226,7 @@ export function renderCalendar(
 
 
 
-
-        <div
-
-        id="calendar-details"
-
-        class="calendar-details"
-
-
-        >
-
-            Select a workout
-
-        </div>
-
-
-
-
-
-    </div>
+    </section>
 
 
     `;
@@ -162,10 +236,93 @@ export function renderCalendar(
 
 
 
+    addCalendarEvents(
 
-    const buttons =
+        container,
+
+        workouts,
+        onMove
+
+    );
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================================
+// FIND WORKOUT
+// =====================================
+
+
+function findWorkout(
+
+    day,
+
+    workouts,
+    onMove
+
+){
+
+
+    return workouts.find(workout => {
+
+
+        if(!workout.day){
+
+            return false;
+
+        }
+
+
+
+        return (
+
+            normaliseDay(workout.day) === normaliseDay(day)
+
+        );
+
+
+    });
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================================
+// EVENTS
+// =====================================
+
+
+function addCalendarEvents(
+
+    container,
+
+    workouts
+
+){
+
+
+
+    const cards =
         container.querySelectorAll(
-            ".calendar-day"
+            ".calendar-card"
         );
 
 
@@ -180,11 +337,35 @@ export function renderCalendar(
 
 
 
-    buttons.forEach(button=>{
+    cards.forEach(card => {
+        card.addEventListener("dragstart", event => {
+            const workout = findWorkout(card.dataset.day, workouts);
+            if (!workout) { event.preventDefault(); return; }
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", card.dataset.day);
+            card.classList.add("dragging");
+        });
+        card.addEventListener("dragend", () => card.classList.remove("dragging"));
+        card.addEventListener("dragover", event => { event.preventDefault(); card.classList.add("drag-target"); });
+        card.addEventListener("dragleave", () => card.classList.remove("drag-target"));
+        card.addEventListener("drop", event => {
+            event.preventDefault();
+            card.classList.remove("drag-target");
+            const sourceDay = event.dataTransfer.getData("text/plain");
+            const targetDay = card.dataset.day;
+            if (!sourceDay || sourceDay === targetDay) return;
+            const source = findWorkout(sourceDay, workouts);
+            const target = findWorkout(targetDay, workouts);
+            const moved = workouts.map(workout => {
+                if (workout === source) return { ...workout, day: targetDay };
+                if (workout === target) return { ...workout, day: sourceDay };
+                return workout;
+            });
+            onMove(moved);
+        });
 
 
-
-        button.addEventListener(
+        card.addEventListener(
 
             "click",
 
@@ -192,18 +373,14 @@ export function renderCalendar(
 
 
                 const day =
-                    button.dataset.day;
+                    card.dataset.day;
 
 
 
                 const workout =
-                    workouts.find(
-
-                        w =>
-                        w.day?.toLowerCase()
-                        ===
-                        day.toLowerCase()
-
+                    findWorkout(
+                        day,
+                        workouts
                     );
 
 
@@ -218,14 +395,17 @@ export function renderCalendar(
 
                     <h3>
 
+                        ${escapeHtml(day)}
+
                         Rest Day
 
                     </h3>
 
 
+
                     <p>
 
-                        Recovery, mobility and adaptation.
+                        Focus on recovery, mobility and preparation.
 
                     </p>
 
@@ -235,8 +415,8 @@ export function renderCalendar(
 
                     return;
 
-
                 }
+
 
 
 
@@ -246,92 +426,143 @@ export function renderCalendar(
                 details.innerHTML = `
 
 
-                    <h3>
 
-                        ${workout.name}
+                <div class="calendar-detail-header">
 
-                    </h3>
 
+                    <span>
+
+                        ${escapeHtml(day)}
+
+                    </span>
+
+
+                    <h2>
+
+                        ${escapeHtml(workout.name || "Training Session")}
+
+                    </h2>
+
+
+                </div>
+
+
+
+
+
+
+                <div class="calendar-detail-info">
 
 
                     <p>
 
-                        ${workout.type || "Training Session"}
+                        <strong>
+                        Type:
+                        </strong>
+
+                        ${escapeHtml(workout.type || "-")}
 
                     </p>
 
 
 
 
-                    <div>
+                    <p>
 
                         <strong>
                         Duration:
                         </strong>
 
-                        ${workout.duration || "-"}
+                        ${escapeHtml(workout.duration || "-")}
 
-                    </div>
-
-
+                    </p>
 
 
 
-                    <div>
+
+                    <p>
 
                         <strong>
                         Focus:
                         </strong>
 
-                        ${workout.purpose || "-"}
+                        ${escapeHtml(workout.purpose || "-")}
 
-                    </div>
-
-
+                    </p>
 
 
-                    <h4>
-                        Exercises
-                    </h4>
+                </div>
 
 
-                    <ul>
-
-                    ${
-                        workout.exercises
-
-                        ?
-
-                        workout.exercises
-                        .map(ex=>`
-
-                            <li>
-                            ${
-                                typeof ex === "string"
-                                ?
-                                ex
-                                :
-                                ex.name
-                            }
-                            </li>
-
-                        `)
-                        .join("")
-
-                        :
-
-                        "<li>No exercises listed</li>"
-
-                    }
 
 
-                    </ul>
+
+
+
+                <h3>
+
+                    Exercises
+
+                </h3>
+
+
+
+
+                <ul>
+
+
+                ${
+                    workout.exercises
+
+                    ?
+
+                    workout.exercises.map(ex => {
+
+
+                        return `
+
+
+                        <li>
+
+                        ${
+                            typeof ex === "string"
+
+                            ?
+
+                            escapeHtml(ex)
+
+                            :
+
+                            escapeHtml(ex?.name || ex?.exercise || "Exercise")
+
+                        }
+
+
+                        </li>
+
+
+                        `;
+
+
+                    }).join("")
+
+
+                    :
+
+                    "<li>No exercises available</li>"
+
+                }
+
+
+                </ul>
 
 
                 `;
 
 
+
             }
+
 
         );
 
@@ -339,5 +570,14 @@ export function renderCalendar(
     });
 
 
+}
 
+function normaliseDay(value) {
+    const text = String(value || "").toLowerCase();
+    return ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+        .find(day => text.includes(day)) || text;
+}
+
+function escapeHtml(value) {
+    return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 }

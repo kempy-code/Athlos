@@ -92,6 +92,7 @@ body{
     -moz-osx-font-smoothing:grayscale;
 
 }
+.legal-page{width:min(760px,calc(100% - 40px));margin:0 auto;padding:70px 0 100px}.legal-page>a{color:#bc3b10;font-weight:700;text-decoration:none}.legal-page h1{margin:35px 0 8px;font-size:clamp(42px,7vw,72px);letter-spacing:-.05em}.legal-page h2{margin:35px 0 8px}.legal-page p{color:var(--text-secondary);line-height:1.8}
 
 /* ===========================================
    LAYOUT
@@ -119,6 +120,15 @@ body{
         var(--space-4);
 
 }
+
+.container:has(.athlos-dashboard){
+    max-width:1248px;
+    margin:0 auto;
+    padding:32px 24px 72px;
+}
+.container:has(.auth-shell){max-width:1160px;margin:0 auto;padding:clamp(24px,5vw,64px) 24px;}
+
+[hidden]{ display:none !important; }
 
 /* ===========================================
    HEADER
