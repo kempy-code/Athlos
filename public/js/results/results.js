@@ -20,6 +20,7 @@ import { logout } from "../authClient.js";
 import { renderAccount } from "./account.js";
 import { renderToolkit } from "./toolkit.js";
 import { renderActivityHistory } from "./activityHistory.js";
+import { initialiseTutorial } from "./tutorial.js";
 
 export function loadDashboard(rawPlan) {
 
@@ -80,11 +81,13 @@ export function loadDashboard(rawPlan) {
     const home = getTab("home-tab");
 
     if (home) {
+        const welcome = document.createElement("div");
         const homeWorkouts = document.createElement("div");
         const homeRecovery = document.createElement("div");
         const homeNutrition = document.createElement("div");
 
-        home.replaceChildren(homeWorkouts, homeRecovery, homeNutrition);
+        welcome.innerHTML = onboardingChecklist(plan, nextWorkout);
+        home.replaceChildren(welcome, homeWorkouts, homeRecovery, homeNutrition);
         renderWorkouts(homeWorkouts, nextWorkout ? [nextWorkout] : [], "Next workout");
         renderRecovery(homeRecovery, plan.recovery);
         renderNutrition(homeNutrition, plan.nutrition, true);
@@ -143,9 +146,26 @@ export function loadDashboard(rawPlan) {
     dashboard.querySelector("[data-exit-demo]")?.addEventListener("click", exitDemo);
     dashboard.prepend(accountBar);
 
+    initialiseTutorial(dashboard);
+
     dashboard.addEventListener("athlos:start-workout", event => {
         openWorkoutModal(event.detail.workout, () => loadDashboard(rawPlan));
     });
+}
+
+function onboardingChecklist(plan, nextWorkout) {
+    const completed = getWorkoutLogs().filter(log => log.status === "completed").length;
+    const items = [
+        [true, "Your athlete profile and plan are ready"],
+        [Boolean(nextWorkout), "Review your next training session"],
+        [completed > 0, completed > 0 ? "First workout logged" : "Complete and log your first workout"],
+        [false, "Ask the AI Coach one training question"]
+    ];
+    const done = items.filter(([value]) => value).length;
+    return `<section class="getting-started-card" aria-labelledby="getting-started-title">
+        <div><span class="eyebrow">GETTING STARTED</span><h2 id="getting-started-title">Make Athlos yours</h2><p>${done} of ${items.length} starter steps complete. Your next best action is ready below.</p></div>
+        <div class="checklist" role="list">${items.map(([value, label]) => `<div class="checklist-item${value ? " complete" : ""}" role="listitem"><span aria-hidden="true">${value ? "✓" : ""}</span><strong>${escapeHtml(label)}</strong></div>`).join("")}</div>
+    </section>`;
 }
 
 function exitDemo() {

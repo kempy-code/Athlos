@@ -124,11 +124,14 @@ export function createDashboard(plan) {
 
 
 
-    <nav class="dashboard-tabs">
+    <div class="dashboard-command-bar">
+    <nav class="dashboard-tabs" aria-label="Dashboard sections">
 
 
         <button
             class="dashboard-tab active"
+            type="button"
+            aria-current="page"
             data-tab="home">
 
             Home
@@ -140,6 +143,7 @@ export function createDashboard(plan) {
 
         <button
             class="dashboard-tab"
+            type="button"
             data-tab="calendar">
 
             Calendar
@@ -151,6 +155,7 @@ export function createDashboard(plan) {
 
         <button
             class="dashboard-tab"
+            type="button"
             data-tab="workouts">
 
             Workouts
@@ -162,6 +167,7 @@ export function createDashboard(plan) {
 
         <button
             class="dashboard-tab"
+            type="button"
             data-tab="nutrition">
 
             Nutrition
@@ -173,20 +179,23 @@ export function createDashboard(plan) {
 
         <button
             class="dashboard-tab"
+            type="button"
             data-tab="progress">
 
             Progress
 
         </button>
 
-        <button class="dashboard-tab" data-tab="activity">Activity</button>
-        <button class="dashboard-tab" data-tab="coach">AI Coach</button>
-        <button class="dashboard-tab" data-tab="toolkit">Toolkit</button>
-        <button class="dashboard-tab" data-tab="account">Account</button>
+        <button class="dashboard-tab" type="button" data-tab="activity">Activity</button>
+        <button class="dashboard-tab" type="button" data-tab="coach">AI Coach</button>
+        <button class="dashboard-tab" type="button" data-tab="toolkit">Toolkit</button>
+        <button class="dashboard-tab" type="button" data-tab="account">Account</button>
 
 
 
     </nav>
+    <button class="dashboard-help-button" id="dashboard-help-btn" type="button" aria-label="Open the Athlos tutorial">Tour</button>
+    </div>
 
 
 
@@ -317,6 +326,7 @@ function initialiseTabs(dashboard){
                     button.classList.remove(
                         "active"
                     );
+                    button.removeAttribute("aria-current");
 
                 });
 
@@ -336,6 +346,7 @@ function initialiseTabs(dashboard){
                 tab.classList.add(
                     "active"
                 );
+                tab.setAttribute("aria-current", "page");
 
 
 
