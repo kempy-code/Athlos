@@ -153,12 +153,14 @@
 .dashboard-page { display: none; min-width: 0; margin-top: 20px; }
 .dashboard-page.active { display: block; }
 .dashboard-page > div + div { margin-top: 20px; }
+.quick-action-panel{margin-bottom:20px;padding:clamp(20px,3vw,28px);border:1px solid var(--dash-border);border-radius:24px;background:var(--dash-surface);box-shadow:0 8px 30px rgba(31,29,24,.035)}.quick-action-heading{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:18px}.quick-action-heading h2{margin:6px 0 0;font-size:clamp(23px,3vw,31px);letter-spacing:-.03em}.quick-action-heading p{margin:0;font-size:13px}.quick-action-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.quick-action{display:grid;grid-template-columns:36px minmax(0,1fr);align-items:center;gap:11px;min-width:0;padding:14px;border:1px solid var(--dash-border);border-radius:15px;background:var(--dash-surface-soft);text-align:left;cursor:pointer;transition:transform .18s ease,border-color .18s ease,background .18s ease}.quick-action:hover{transform:translateY(-2px);border-color:#d3c8bf;background:#fff}.quick-action>span{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:#fff;color:var(--dash-accent)!important;font-weight:800}.quick-action div{min-width:0}.quick-action strong,.quick-action small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.quick-action strong{font-size:13px}.quick-action small{margin-top:2px;color:var(--dash-muted);font-size:10px}.quick-action.primary{border-color:#191a1d;background:#191a1d}.quick-action.primary strong,.quick-action.primary small{color:#fff!important}.quick-action.primary small{opacity:.7}.quick-action.primary>span{background:#ffffff18;color:#fff!important}
 
 @media (max-width: 860px) {
     .athlos-dashboard { border-radius: 24px; }
     .dashboard-hero { grid-template-columns: 1fr; }
     .dashboard-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .dashboard-tab { flex: 0 0 auto; min-width: 104px; }
+    .quick-action-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width: 520px) {
     .athlos-dashboard { padding: 12px; border-radius: 18px; }
@@ -167,6 +169,7 @@
     .stat-card { padding: 16px; border-radius: 15px; }
     .stat-card strong { font-size: 19px; }
     .dashboard-command-bar{top:6px;margin-inline:-2px}.dashboard-tabs { border-radius: 12px; }.dashboard-help-button{min-width:58px;padding-inline:10px}.dashboard-tab{min-width:92px;padding-inline:13px}
+    .quick-action-heading{align-items:flex-start;flex-direction:column;gap:5px}.quick-action-grid{grid-template-columns:1fr}.quick-action strong,.quick-action small{white-space:normal}
 }
 .coach-messages{display:flex;flex-direction:column;gap:12px;max-height:520px;padding:6px;overflow-y:auto}.coach-message{max-width:82%;padding:14px 16px;border:1px solid var(--dash-border);border-radius:16px;background:var(--dash-surface-soft)}.coach-message.user{align-self:flex-end;background:var(--dash-text);border-color:var(--dash-text)}.coach-message.user span,.coach-message.user p{color:#fff!important}.coach-message span{display:block;margin-bottom:5px;color:var(--dash-accent)!important;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}.coach-message p{margin:0;line-height:1.6}.coach-empty{padding:28px;text-align:center;background:var(--dash-surface-soft);border-radius:14px}.coach-form{margin-top:20px}.coach-form>label{display:block;margin-bottom:8px;font-size:13px;font-weight:750}.coach-form>div{display:grid;grid-template-columns:1fr auto;gap:10px}.coach-form textarea{min-height:62px;padding:13px;border:1px solid var(--dash-border);border-radius:12px;resize:vertical;font:inherit}.coach-form .primary-button{width:auto;margin:0}.coach-disclaimer{margin:16px 0 0;font-size:11px}.coach-section>.text-button{margin-top:12px}@media(max-width:560px){.account-bar{align-items:flex-start;flex-direction:column}.coach-message{max-width:94%}.coach-form>div{grid-template-columns:1fr}.coach-form .primary-button{width:100%}}
 

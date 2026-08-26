@@ -41,32 +41,52 @@ function startTutorial(dashboard) {
     document.body.append(layer);
     const popover = layer.querySelector(".tutorial-popover");
 
+    let scrollFrame = 0;
     const close = complete => {
         if (complete) localStorage.setItem(STORAGE_KEY, "true");
         layer.remove();
         window.removeEventListener("resize", render);
+        window.removeEventListener("scroll", onScroll, true);
         document.removeEventListener("keydown", onKey);
+        cancelAnimationFrame(scrollFrame);
     };
     const onKey = event => {
         if (event.key === "Escape") close(false);
         if (event.key === "ArrowRight") move(1);
         if (event.key === "ArrowLeft") move(-1);
+        if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(event.key)) event.preventDefault();
     };
     const move = amount => {
         if (index + amount >= steps.length) return close(true);
         index = Math.max(0, index + amount);
         render();
     };
+    const onScroll = () => {
+        cancelAnimationFrame(scrollFrame);
+        scrollFrame = requestAnimationFrame(positionCurrentStep);
+    };
+    function positionCurrentStep() {
+        const target = dashboard.querySelector(steps[index].selector);
+        if (!target || !document.body.contains(layer)) return;
+        const rect = target.getBoundingClientRect();
+        updateSpotlight(rect);
+        positionPopover(popover, rect);
+    }
+    function updateSpotlight(rect) {
+        const left = Math.max(8, rect.left - 7);
+        const top = Math.max(8, rect.top - 7);
+        layer.style.setProperty("--spot-x", `${left}px`);
+        layer.style.setProperty("--spot-y", `${top}px`);
+        layer.style.setProperty("--spot-w", `${Math.max(0, Math.min(window.innerWidth - left - 8, rect.width + 14))}px`);
+        layer.style.setProperty("--spot-h", `${Math.max(0, Math.min(window.innerHeight - top - 8, rect.height + 14))}px`);
+    }
     function render() {
         const step = steps[index];
         const target = dashboard.querySelector(step.selector);
         if (!target) return move(1);
         target.scrollIntoView({ behavior: "auto", block: "center" });
         const rect = target.getBoundingClientRect();
-        layer.style.setProperty("--spot-x", `${Math.max(8, rect.left - 7)}px`);
-        layer.style.setProperty("--spot-y", `${Math.max(8, rect.top - 7)}px`);
-        layer.style.setProperty("--spot-w", `${Math.min(window.innerWidth - 16, rect.width + 14)}px`);
-        layer.style.setProperty("--spot-h", `${Math.min(window.innerHeight - 16, rect.height + 14)}px`);
+        updateSpotlight(rect);
         layer.querySelector(".tutorial-step").textContent = `STEP ${index + 1} OF ${steps.length}`;
         layer.querySelector("h2").textContent = step.title;
         layer.querySelector("p").textContent = step.body;
@@ -79,6 +99,9 @@ function startTutorial(dashboard) {
     layer.querySelector("[data-back]").addEventListener("click", () => move(-1));
     layer.querySelector("[data-next]").addEventListener("click", () => move(1));
     window.addEventListener("resize", render);
+    window.addEventListener("scroll", onScroll, true);
+    layer.addEventListener("wheel", event => event.preventDefault(), { passive: false });
+    layer.addEventListener("touchmove", event => event.preventDefault(), { passive: false });
     document.addEventListener("keydown", onKey);
     render();
     layer.querySelector("[data-next]").focus();

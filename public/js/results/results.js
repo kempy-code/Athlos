@@ -82,15 +82,20 @@ export function loadDashboard(rawPlan) {
 
     if (home) {
         const welcome = document.createElement("div");
+        const actions = document.createElement("div");
         const homeWorkouts = document.createElement("div");
         const homeRecovery = document.createElement("div");
         const homeNutrition = document.createElement("div");
 
         welcome.innerHTML = onboardingChecklist(plan, nextWorkout);
-        home.replaceChildren(welcome, homeWorkouts, homeRecovery, homeNutrition);
+        actions.innerHTML = quickActions(nextWorkout);
+        home.replaceChildren(welcome, actions, homeWorkouts, homeRecovery, homeNutrition);
         renderWorkouts(homeWorkouts, nextWorkout ? [nextWorkout] : [], "Next workout");
         renderRecovery(homeRecovery, plan.recovery);
         renderNutrition(homeNutrition, plan.nutrition, true);
+        home.querySelector("#home-start-workout")?.addEventListener("click", () => {
+            if (nextWorkout) openWorkoutModal(nextWorkout, () => loadDashboard(rawPlan));
+        });
     }
 
     const calendar = getTab("calendar-tab");
@@ -146,11 +151,30 @@ export function loadDashboard(rawPlan) {
     dashboard.querySelector("[data-exit-demo]")?.addEventListener("click", exitDemo);
     dashboard.prepend(accountBar);
 
+    dashboard.querySelectorAll("[data-open-tab]").forEach(button => {
+        button.addEventListener("click", () => {
+            dashboard.querySelector(`[data-tab="${button.dataset.openTab}"]`)?.click();
+            dashboard.querySelector(".dashboard-command-bar")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+    });
+
     initialiseTutorial(dashboard);
 
     dashboard.addEventListener("athlos:start-workout", event => {
         openWorkoutModal(event.detail.workout, () => loadDashboard(rawPlan));
     });
+}
+
+function quickActions(nextWorkout) {
+    return `<section class="quick-action-panel" aria-labelledby="quick-actions-title">
+        <div class="quick-action-heading"><div><span class="eyebrow">TODAY</span><h2 id="quick-actions-title">What do you want to do?</h2></div><p>Everything important is one tap away.</p></div>
+        <div class="quick-action-grid">
+            <button type="button" class="quick-action primary" id="home-start-workout"><span>▶</span><div><strong>Start training</strong><small>${escapeHtml(nextWorkout?.name || "Next planned session")}</small></div></button>
+            <button type="button" class="quick-action" data-open-tab="activity"><span>＋</span><div><strong>Log activity</strong><small>Add a completed workout</small></div></button>
+            <button type="button" class="quick-action" data-open-tab="toolkit"><span>♥</span><div><strong>Check readiness</strong><small>Adjust today’s training</small></div></button>
+            <button type="button" class="quick-action" data-open-tab="coach"><span>✦</span><div><strong>Ask AI Coach</strong><small>Get plan-aware guidance</small></div></button>
+        </div>
+    </section>`;
 }
 
 function onboardingChecklist(plan, nextWorkout) {

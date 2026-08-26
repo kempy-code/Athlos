@@ -13,6 +13,11 @@ export function renderProgress(container, plan) {
         <div class="progress-stat-grid">${stat("Sessions complete", summary.completed)}${stat("Plan completion", `${summary.completionRate}%`)}${stat("Average effort", summary.averageRpe === "-" ? "-" : `${summary.averageRpe}/10`)}${stat("Latest readiness", readiness?.recommendation?.level || "Not checked")}</div>
         <div class="completion-track" aria-label="Plan completion"><span style="width:${summary.completionRate}%"></span></div>
         <article class="weekly-review ${review.tone}"><div><span>ATHLOS WEEKLY REVIEW</span><h3>${weeklyTitle(review.tone)}</h3><p>${escapeHtml(review.message)}</p></div><dl><div><dt>Sessions</dt><dd>${review.sessions}</dd></div><div><dt>Average RPE</dt><dd>${review.averageRpe}</dd></div><div><dt>Adjusted days</dt><dd>${review.reducedDays}</dd></div></dl></article>
+        <div class="insight-grid">
+            ${trendCard("Training load", "Last four weeks", loadSeries(getWorkoutLogs()), "load", "Session effort × duration")}
+            ${trendCard("Effort trend", "Last eight sessions", effortSeries(getWorkoutLogs()), "effort", "How hard training felt")}
+            ${trendCard("Readiness", "Recent check-ins", readinessSeries(getReadiness()), "readiness", "Energy, sleep and recovery")}
+        </div>
         <div class="analytics-panel"><div class="analytics-heading"><div><h3>Performance analytics</h3><p>Explore training volume by sport and time range.</p></div><div><select data-chart-sport aria-label="Filter by sport"><option value="all">All sports</option><option value="run">Running</option><option value="strength">Strength</option><option value="ride">Cycling</option><option value="other">Other</option></select><select data-chart-range aria-label="Filter by date"><option value="28">4 weeks</option><option value="7">7 days</option><option value="3650">All time</option></select></div></div><div class="training-chart" role="img" aria-label="Training minutes chart"></div></div>
         <div class="records-grid">${recordCard("Longest activity",records.longest?.distanceKm?`${Number(records.longest.distanceKm).toFixed(2)} km`:"—")}${recordCard("Best pace",records.fastest?formatPace(records.fastest.pace):"—")}${recordCard("Top strength record",records.lifts[0]?`${records.lifts[0].name} · ${records.lifts[0].load} kg`:"—")}</div>
         <div class="safe-achievements">${safeBadges.map(item=>`<article class="${item.earned?"earned":""}"><span>${item.earned?"✓":"○"}</span><div><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.text)}</p></div></article>`).join("")}</div>
@@ -23,6 +28,27 @@ export function renderProgress(container, plan) {
     const draw=()=>renderChart(chart,getWorkoutLogs(),sport.value,Number(range.value));sport.addEventListener("change",draw);range.addEventListener("change",draw);draw();
 }
 function weeklyTitle(tone) { return tone === "manage" ? "Absorb the work" : tone === "progress" ? "Momentum is building" : "Build the rhythm"; }
+function loadSeries(logs) {
+    const now = new Date();
+    return Array.from({ length: 4 }, (_, index) => {
+        const end = now.getTime() - (3 - index) * 7 * 86400000;
+        const start = end - 7 * 86400000;
+        const value = logs.filter(log => log.status === "completed" && new Date(log.completedAt).getTime() >= start && new Date(log.completedAt).getTime() < end)
+            .reduce((sum, log) => sum + Number(log.durationMinutes || 45) * Number(log.rpe || 0), 0);
+        return { label: `W${index + 1}`, value };
+    });
+}
+function effortSeries(logs) { return logs.filter(log => log.status === "completed").slice(-8).map((log, index) => ({ label: String(index + 1), value: Number(log.rpe || 0) })); }
+function readinessSeries(items) { return items.slice(-8).map((item, index) => ({ label: String(index + 1), value: Math.round(([item.energy, item.sleep, 6 - item.soreness, 6 - item.stress].reduce((sum, value) => sum + Number(value || 3), 0) / 20) * 100) })); }
+function trendCard(title, subtitle, values, tone, footnote) {
+    const points = values.length ? values : [{ label: "—", value: 0 }];
+    const max = Math.max(1, ...points.map(item => item.value));
+    const width = 320, height = 120, pad = 10;
+    const coords = points.map((item, index) => ({ ...item, x: points.length === 1 ? width / 2 : pad + index * ((width - pad * 2) / (points.length - 1)), y: height - pad - (item.value / max) * (height - pad * 2) }));
+    const path = coords.map((point, index) => `${index ? "L" : "M"}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
+    const latest = points.at(-1)?.value || 0;
+    return `<article class="insight-card ${tone}"><div class="insight-title"><div><h3>${escapeHtml(title)}</h3><span>${escapeHtml(subtitle)}</span></div><strong>${escapeHtml(latest)}</strong></div><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(title)} trend"><path class="chart-area" d="${path} L${coords.at(-1).x},${height} L${coords[0].x},${height} Z"></path><path class="chart-line" d="${path}"></path>${coords.map(point => `<circle cx="${point.x}" cy="${point.y}" r="3"><title>${escapeHtml(point.label)}: ${escapeHtml(point.value)}</title></circle>`).join("")}</svg><div class="insight-footer"><span>${escapeHtml(points[0].label)}</span><small>${escapeHtml(footnote)}</small><span>${escapeHtml(points.at(-1).label)}</span></div></article>`;
+}
 function recordCard(label,value){return`<article><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></article>`;}
 function formatPace(seconds){const minutes=Math.floor(seconds/60),remainder=Math.round(seconds%60);return`${minutes}:${String(remainder).padStart(2,"0")} /km`;}
 function renderChart(container,logs,sport,days){const cutoff=Date.now()-days*86400000;const filtered=logs.filter(log=>new Date(log.completedAt).getTime()>=cutoff&&(sport==="all"||logSport(log)===sport));const buckets=Array.from({length:Math.min(days,28)},(_,index)=>({date:new Date(Date.now()-(Math.min(days,28)-1-index)*86400000),minutes:0}));filtered.forEach(log=>{const key=new Date(log.completedAt).toDateString();const bucket=buckets.find(item=>item.date.toDateString()===key);if(bucket)bucket.minutes+=Number(log.durationMinutes||45);});const max=Math.max(1,...buckets.map(item=>item.minutes));container.innerHTML=`<div class="chart-bars">${buckets.map(item=>`<div class="chart-bar" title="${item.date.toLocaleDateString()}: ${item.minutes} minutes"><span style="height:${Math.max(3,item.minutes/max*100)}%"></span></div>`).join("")}</div><div class="chart-axis"><span>${buckets[0]?.date.toLocaleDateString(undefined,{day:"numeric",month:"short"})||""}</span><span>Training minutes</span><span>Today</span></div>`;}
