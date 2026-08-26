@@ -1,3 +1,5 @@
+import { isStaticHosting } from "./api.js";
+
 const STORE_KEY = "athlos_app_v1";
 
 function defaults() {
@@ -15,7 +17,7 @@ export function getAppData() {
 
 function persist(next) {
     localStorage.setItem(STORE_KEY, JSON.stringify(next));
-    fetch("/api/user-data", { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({data:next}) }).catch(() => {});
+    if (!isStaticHosting()) fetch("/api/user-data", { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({data:next}) }).catch(() => {});
     return next;
 }
 
@@ -96,6 +98,7 @@ export function getTrainingLoad(days = 28, now = new Date()) {
 }
 
 export async function hydrateAppData() {
+    if (isStaticHosting()) return getAppData();
     try {
         const response=await fetch("/api/user-data");
         if(!response.ok)return getAppData();

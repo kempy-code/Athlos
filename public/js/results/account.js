@@ -10,7 +10,7 @@ export async function renderAccount(container){
         <form id="password-form" class="account-form"><h3>Change password</h3><label>Current password<input name="currentPassword" type="password" autocomplete="current-password" required></label><label>New password<input name="newPassword" type="password" minlength="10" autocomplete="new-password" required></label><button class="secondary-button" type="submit">Update password</button><p role="status"></p></form>
         ${user?.role==="coach"||user?.role==="admin"?coachPanel():'<details class="coach-activation"><summary>Are you an approved coach?</summary><form id="coach-activate"><label>Coach invite code<input name="inviteCode" type="password" required></label><button class="secondary-button" type="submit">Activate coach tools</button><p role="status"></p></form></details>'}
         <div class="account-actions"><button id="account-signout" class="secondary-button" type="button">Sign out</button><button id="delete-account" class="danger-button" type="button">Delete account</button></div>
-        <p class="account-legal"><a href="/privacy.html" target="_blank">Privacy policy</a> · <a href="/terms.html" target="_blank">Terms of use</a></p>
+        <p class="account-legal"><a href="./privacy.html" target="_blank">Privacy policy</a> · <a href="./terms.html" target="_blank">Terms of use</a></p>
     </section>`;
     bindAccount(container,user);
 }

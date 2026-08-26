@@ -37,6 +37,7 @@ import {
 
 import { hydrateAppData, loadPlan, savePlan } from "./appStore.js";
 import { getCurrentUser, renderAuth } from "./authClient.js";
+import { isStaticHosting } from "./api.js";
 import { demoPlan } from "./demoPlan.js";
 import { seedDemoData } from "./appStore.js";
 
@@ -188,6 +189,10 @@ let currentAnswer = null;
 async function start(){
 
     loadState();
+    if (isStaticHosting()) {
+        renderAuth(document.querySelector(".container"), { staticMode: true });
+        return;
+    }
     const user=await getCurrentUser();
     if(!user){renderAuth(document.querySelector(".container"));return;}
     document.body.classList.remove("public-site");
@@ -882,7 +887,7 @@ window.addEventListener("athlos:open-demo", () => {
 });
 
 if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("/service-worker.js").catch(() => {}));
+    window.addEventListener("load", () => navigator.serviceWorker.register(new URL("../service-worker.js", import.meta.url)).catch(() => {}));
 }
 
 
