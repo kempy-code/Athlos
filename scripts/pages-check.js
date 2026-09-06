@@ -5,7 +5,8 @@ const read = path => readFile(new URL(path, root), "utf8");
 const checks = [];
 const check = (name, pass) => checks.push({ name, pass });
 
-const [html, manifest, script, api, worker, workflow] = await Promise.all([
+const [rootHtml, html, manifest, script, api, worker, workflow] = await Promise.all([
+    read("index.html"),
     read("public/index.html"),
     read("public/manifest.webmanifest"),
     read("public/js/script.js"),
@@ -14,6 +15,7 @@ const [html, manifest, script, api, worker, workflow] = await Promise.all([
     read(".github/workflows/pages.yml")
 ]);
 
+check("Branch deployment redirects to app", /\.\/public\//.test(rootHtml));
 check("Relative HTML assets", !/(?:src|href)="\/(?!\/)/.test(html));
 check("Relative PWA start URL", JSON.parse(manifest).start_url === "./");
 check("Repository-scoped service worker", /registration\.scope/.test(worker) && /import\.meta\.url/.test(script));
