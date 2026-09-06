@@ -18,7 +18,7 @@ export function renderAuth(container, { staticMode = false } = {}) {
                 <span class="eyebrow">PERSONALISED PERFORMANCE</span>
                 <h1>Train with a plan that understands you.</h1>
                 <p class="hero-lead">Athlos turns your goals, schedule, experience and recovery into a practical training system—then adapts alongside you.</p>
-                <div class="hero-actions">${staticMode ? `<button class="landing-button primary" id="try-demo" type="button">Launch interactive demo</button><a class="landing-button secondary" href="https://github.com/kempy-code/Athlos#run-the-full-app" target="_blank" rel="noreferrer">Run full app</a>` : `<button class="landing-button primary" data-open-auth="register">Build my plan</button><button class="landing-button secondary" data-open-auth="login">Sign in</button><button class="landing-button ghost" id="try-demo" type="button">Explore demo</button>`}</div>
+                <div class="hero-actions">${staticMode ? `<button class="landing-button primary" data-static-onboarding type="button">Build my plan</button><button class="landing-button secondary" id="try-demo" type="button">Explore sample dashboard</button><a class="landing-button ghost" href="https://github.com/kempy-code/Athlos#run-the-full-app" target="_blank" rel="noreferrer">Run full app</a>` : `<button class="landing-button primary" data-open-auth="register">Build my plan</button><button class="landing-button secondary" data-open-auth="login">Sign in</button><button class="landing-button ghost" id="try-demo" type="button">Explore demo</button>`}</div>
                 <div class="hero-proof"><span>No generic templates</span><span>Built around your week</span><span>AI coach included</span></div>
             </div>
             <div class="hero-product" data-parallax="-0.035">
@@ -49,7 +49,7 @@ export function renderAuth(container, { staticMode = false } = {}) {
             <div class="coach-chat"><div class="chat-user">I only have 30 minutes today. What should I prioritise?</div><div class="chat-coach"><span>A</span><p>Keep the warm-up, complete the first three quality intervals, then finish with five easy minutes. That preserves the main adaptation without rushing recovery.</p></div></div>
         </section>
 
-        ${staticMode ? `<section class="pages-demo-gateway" id="member-access"><span class="eyebrow">GITHUB PAGES EDITION</span><h2>Explore Athlos without an account.</h2><p>This static showcase includes the complete sample dashboard, workout tracking, readiness tools, progress analytics and an offline demonstration of the AI Coach. Your demo changes stay in this browser.</p><button class="landing-button primary" id="pages-demo-button" type="button">Open the athlete dashboard</button><small>Secure accounts, cloud sync and live AI generation require the full Node server.</small></section>` : `<section class="auth-gateway" id="member-access">
+        ${staticMode ? `<section class="pages-demo-gateway" id="member-access"><span class="eyebrow">GITHUB PAGES EDITION</span><h2>Build a plan or explore the sample athlete.</h2><p>Complete the full athlete questionnaire to create a plan from your answers, or open the pre-filled dashboard to explore workout tracking, readiness tools, analytics and the offline AI Coach.</p><div class="pages-demo-actions"><button class="landing-button primary" data-static-onboarding type="button">Take the athlete quiz</button><button class="landing-button secondary" id="pages-demo-button" type="button">Open sample dashboard</button></div><small>Your plan and activity data stay in this browser. Secure accounts, cloud sync and live AI generation require the full Node server.</small></section>` : `<section class="auth-gateway" id="member-access">
             <div class="auth-message"><span class="eyebrow">START TRAINING</span><h2>Your programme starts here.</h2><p>Create a secure account to save your plan and continue from any device.</p><ul><li>Personalised weekly programme</li><li>Workout and readiness history</li><li>Nutrition and recovery guidance</li><li>Personal AI Coach</li></ul></div>
             <div class="auth-card">
                 <div class="auth-tabs" ${resetToken?"hidden":""}><button class="active" type="button" data-auth-tab="login">Sign in</button><button type="button" data-auth-tab="register">Create account</button></div>
@@ -65,6 +65,13 @@ export function renderAuth(container, { staticMode = false } = {}) {
     const error = container.querySelector("#auth-error");
     if (staticMode) {
         container.querySelector("#try-demo")?.addEventListener("click", () => window.dispatchEvent(new CustomEvent("athlos:open-demo")));
+        container.querySelectorAll("[data-static-onboarding]").forEach(button => button.addEventListener("click", () => {
+            localStorage.removeItem("athlos_state");
+            localStorage.removeItem("athlos_app_v1");
+            const url = new URL(window.location.href);
+            url.searchParams.set("onboarding", "1");
+            window.location.href = url;
+        }));
         initialiseLandingEffects(container);
         return;
     }

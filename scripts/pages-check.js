@@ -5,12 +5,13 @@ const read = path => readFile(new URL(path, root), "utf8");
 const checks = [];
 const check = (name, pass) => checks.push({ name, pass });
 
-const [rootHtml, html, manifest, script, api, worker, workflow] = await Promise.all([
+const [rootHtml, html, manifest, script, api, staticPlan, worker, workflow] = await Promise.all([
     read("index.html"),
     read("public/index.html"),
     read("public/manifest.webmanifest"),
     read("public/js/script.js"),
     read("public/js/api.js"),
+    read("public/js/staticPlan.js"),
     read("public/service-worker.js"),
     read(".github/workflows/pages.yml")
 ]);
@@ -20,6 +21,7 @@ check("Relative HTML assets", !/(?:src|href)="\/(?!\/)/.test(html));
 check("Relative PWA start URL", JSON.parse(manifest).start_url === "./");
 check("Repository-scoped service worker", /registration\.scope/.test(worker) && /import\.meta\.url/.test(script));
 check("GitHub Pages mode", /github\.io/.test(api) && /staticMode: true/.test(script));
+check("Static questionnaire plan", /onboarding/.test(script) && /buildStaticPlan/.test(script + staticPlan));
 check("Pages artifact uses public directory", /path: public/.test(workflow));
 try { await access(new URL("public/.nojekyll", root)); check("Jekyll bypass", true); } catch { check("Jekyll bypass", false); }
 

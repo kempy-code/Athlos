@@ -4,7 +4,7 @@ Athlos is a personalised, recovery-aware training planner with workout tracking,
 
 ## Live demo
 
-The GitHub Pages edition is a static interactive showcase. It includes the sample athlete dashboard, workout logging, readiness tools, analytics and an offline AI Coach demonstration. Demo data is stored in the browser.
+The GitHub Pages edition is an interactive static app. New athletes can complete the full questionnaire and receive a locally generated plan based on their answers, or explore the pre-filled sample dashboard. It also includes workout logging, readiness tools, analytics and an offline AI Coach demonstration. Data is stored in the browser.
 
 [Open the live Athlos demo](https://kempy-code.github.io/Athlos/)
 

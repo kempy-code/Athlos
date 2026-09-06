@@ -40,6 +40,7 @@ import { getCurrentUser, renderAuth } from "./authClient.js";
 import { isStaticHosting } from "./api.js";
 import { demoPlan } from "./demoPlan.js";
 import { seedDemoData } from "./appStore.js";
+import { buildStaticPlan } from "./staticPlan.js";
 
 
 
@@ -189,8 +190,21 @@ let currentAnswer = null;
 async function start(){
 
     loadState();
-    if (isStaticHosting()) {
-        renderAuth(document.querySelector(".container"), { staticMode: true });
+    const staticMode = isStaticHosting();
+    if (staticMode) {
+        const onboarding = new URLSearchParams(window.location.search).get("onboarding") === "1";
+        if (!onboarding) {
+            renderAuth(document.querySelector(".container"), { staticMode: true });
+            return;
+        }
+        document.body.classList.remove("public-site");
+        const savedPlan = loadPlan();
+        if (savedPlan) {
+            loadDashboard(savedPlan);
+            return;
+        }
+        initQuestionEngine();
+        renderCurrentQuestion();
         return;
     }
     const user=await getCurrentUser();
@@ -704,6 +718,15 @@ async function generatePlan(){
 
     const state =
         getState();
+
+    if (isStaticHosting()) {
+        await new Promise(resolve => setTimeout(resolve, 650));
+        const plan = buildStaticPlan(state.profile);
+        savePlan(plan);
+        markQuizFinished();
+        showProgram(plan);
+        return;
+    }
 
 
 
