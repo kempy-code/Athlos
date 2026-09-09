@@ -314,7 +314,8 @@ function addCalendarEvents(
 
     container,
 
-    workouts
+    workouts,
+    onMove
 
 ){
 
@@ -354,14 +355,7 @@ function addCalendarEvents(
             const sourceDay = event.dataTransfer.getData("text/plain");
             const targetDay = card.dataset.day;
             if (!sourceDay || sourceDay === targetDay) return;
-            const source = findWorkout(sourceDay, workouts);
-            const target = findWorkout(targetDay, workouts);
-            const moved = workouts.map(workout => {
-                if (workout === source) return { ...workout, day: targetDay };
-                if (workout === target) return { ...workout, day: sourceDay };
-                return workout;
-            });
-            onMove(moved);
+            onMove(rescheduleWorkouts(workouts, sourceDay, targetDay));
         });
 
 
@@ -556,8 +550,14 @@ function addCalendarEvents(
 
                 </ul>
 
+                <label class="calendar-move-label">Move this session<select data-move-session><option value="">Choose another day</option>${["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].filter(value=>value!==day).map(value=>`<option>${value}</option>`).join("")}</select></label>
+
 
                 `;
+
+                details.querySelector("[data-move-session]")?.addEventListener("change", event => {
+                    if (event.target.value) onMove(rescheduleWorkouts(workouts, day, event.target.value));
+                });
 
 
 
@@ -570,6 +570,12 @@ function addCalendarEvents(
     });
 
 
+}
+
+export function rescheduleWorkouts(workouts, sourceDay, targetDay) {
+    const source=findWorkout(sourceDay,workouts),target=findWorkout(targetDay,workouts);
+    if(!source||!targetDay||sourceDay===targetDay)return workouts;
+    return workouts.map(workout=>workout===source?{...workout,day:targetDay}:workout===target?{...workout,day:sourceDay}:workout);
 }
 
 function normaliseDay(value) {

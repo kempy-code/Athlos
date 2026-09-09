@@ -1,4 +1,4 @@
-const CACHE = "athlos-shell-v9";
+const CACHE = "athlos-shell-v10";
 const ROOT = self.registration.scope;
 const SHELL = ["./","./index.html","./manifest.webmanifest","./athlos-mark.svg","./css/style.css","./css/auth.css","./js/script.js","./js/api.js","./js/staticPlan.js","./js/demoPlan.js"].map(path => new URL(path, ROOT).href);
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting())));

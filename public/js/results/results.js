@@ -13,7 +13,7 @@ import { renderAchievements } from "./achievements.js";
 import { renderExercises } from "./exercises.js";
 import { renderProgress } from "./progress.js";
 import { openWorkoutModal } from "./workoutModal.js";
-import { clearPlan, getAppData, getWorkoutLogs, savePlan } from "../appStore.js";
+import { clearPlan, getAppData, getTrainingLoad, getWorkoutLogs, savePlan } from "../appStore.js";
 import { resetState } from "../state.js";
 import { renderCoach } from "./coach.js";
 import { logout } from "../authClient.js";
@@ -87,7 +87,7 @@ export function loadDashboard(rawPlan) {
         const homeRecovery = document.createElement("div");
         const homeNutrition = document.createElement("div");
 
-        welcome.innerHTML = onboardingChecklist(plan, nextWorkout);
+        welcome.innerHTML = getWorkoutLogs().some(log => log.status === "completed") ? dailyBrief(nextWorkout) : onboardingChecklist(plan, nextWorkout);
         actions.innerHTML = quickActions(nextWorkout);
         home.replaceChildren(welcome, actions, homeWorkouts, homeRecovery, homeNutrition);
         renderWorkouts(homeWorkouts, nextWorkout ? [nextWorkout] : [], "Next workout");
@@ -96,6 +96,7 @@ export function loadDashboard(rawPlan) {
         home.querySelector("#home-start-workout")?.addEventListener("click", () => {
             if (nextWorkout) openWorkoutModal(nextWorkout, () => loadDashboard(rawPlan));
         });
+        home.querySelector("#review-adaptation")?.addEventListener("click", () => dashboard.querySelector('[data-tab="toolkit"]')?.click());
     }
 
     const calendar = getTab("calendar-tab");
@@ -163,6 +164,19 @@ export function loadDashboard(rawPlan) {
     dashboard.addEventListener("athlos:start-workout", event => {
         openWorkoutModal(event.detail.workout, () => loadDashboard(rawPlan));
     });
+}
+
+export function dailyRecommendation(data = getAppData(), load = getTrainingLoad()) {
+    const latest = (Array.isArray(data?.readiness) ? data.readiness : []).at(-1)?.recommendation;
+    if (latest?.level === "reduce" || Number(load.ratio) > 1.5) return { level:"reduce", label:"Recovery priority", title:"Reduce volume today", text:"Your recent recovery or workload signals are elevated. Keep the movement, remove optional work and cap effort at RPE 6." };
+    if (latest?.level === "adjust" || Number(load.ratio) > 1.25) return { level:"adjust", label:"Train with control", title:"Make a small adjustment", text:"Extend the warm-up, reduce working load by about 10%, and skip the optional finisher if quality drops." };
+    return { level:"ready", label:"Ready to train", title:"Complete the planned session", text:"Current training and readiness signals support today’s plan. Log actual performance so tomorrow’s guidance improves." };
+}
+
+function dailyBrief(nextWorkout) {
+    const data=getAppData(),load=getTrainingLoad(),advice=dailyRecommendation(data,load),week=Date.now()-7*86400000;
+    const sessions=data.workoutLogs.filter(log=>log.status==="completed"&&new Date(log.completedAt).getTime()>=week).length;
+    return `<section class="daily-brief ${advice.level}"><div class="daily-brief-lead"><span class="eyebrow">${escapeHtml(advice.label)}</span><h2>${escapeHtml(advice.title)}</h2><p>${escapeHtml(advice.text)}</p><button id="review-adaptation" class="text-button" type="button">Review readiness and adjustments</button></div><dl><div><dt>This week</dt><dd>${sessions} sessions</dd></div><div><dt>7-day load</dt><dd>${load.recentLoad}</dd></div><div><dt>Next up</dt><dd>${escapeHtml(nextWorkout?.name||"Recovery")}</dd></div></dl></section>`;
 }
 
 function quickActions(nextWorkout) {
