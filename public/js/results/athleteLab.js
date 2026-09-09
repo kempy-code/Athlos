@@ -1,11 +1,5 @@
 import { getAppData, getPersonalRecords, savePerformanceTest } from "../appStore.js";
-
-const ZONES = [
-    { id: "strength", label: "Strength Deck", icon: "◆", description: "Build force, resilience and movement quality.", tags: ["strength", "squat", "press", "deadlift", "row", "carry"] },
-    { id: "speed", label: "Speed Lane", icon: "➜", description: "Develop acceleration, mechanics and repeatable speed.", tags: ["run", "sprint", "speed", "interval", "plyometric"] },
-    { id: "engine", label: "Engine Room", icon: "◉", description: "Improve aerobic power and sustainable conditioning.", tags: ["cardio", "cycle", "row", "aerobic", "tempo", "conditioning"] },
-    { id: "recovery", label: "Recovery Studio", icon: "≈", description: "Restore range, reduce stiffness and prepare to train.", tags: ["mobility", "stretch", "recovery", "warm", "cool"] }
-];
+import { renderVirtualGym } from "./virtualGym.js";
 
 export function renderAthleteLab(container, plan, refresh = () => {}) {
     if (!container) return;
@@ -17,15 +11,8 @@ export function renderAthleteLab(container, plan, refresh = () => {}) {
             <div class="lab-score"><span>ATHLETE LEVEL</span><strong>${athleteLevel(data)}</strong><small>${data.workoutLogs.filter(item => item.status === "completed").length} sessions logged</small></div>
         </section>
         <section class="dashboard-section gym-section">
-            <div class="section-header"><span class="lab-kicker">INTERACTIVE SPACE</span><h2>Explore the Athlos Gym</h2><p>Select a zone to see exercises from your programme that fit its training purpose.</p></div>
-            <div class="gym-layout">
-                <div class="gym-scene" role="group" aria-label="Interactive gym training zones">
-                    <div class="gym-wall"><span>ATHLOS PERFORMANCE LAB</span></div>
-                    <div class="gym-floor"></div>
-                    ${ZONES.map((zone, index) => `<button class="gym-zone zone-${index + 1}${index === 0 ? " active" : ""}" data-zone="${zone.id}" type="button"><span>${zone.icon}</span><strong>${zone.label}</strong><small>Explore</small></button>`).join("")}
-                </div>
-                <aside class="zone-panel" aria-live="polite"></aside>
-            </div>
+            <div class="section-header"><span class="lab-kicker">VIRTUAL ORIENTATION</span><h2>Walk through the Athlos Gym</h2><p>Explore a sample gym, approach a checkpoint and learn how to use each station before your first visit.</p></div>
+            <div id="virtual-gym-root"></div>
         </section>
         <section class="dashboard-section pb-section">
             <div class="section-header"><span class="lab-kicker">PERFORMANCE VAULT</span><h2>Personal best visualiser</h2><p>Log comparable results over time. Athlos highlights improvement and suggests a sensible next target.</p></div>
@@ -45,17 +32,7 @@ export function renderAthleteLab(container, plan, refresh = () => {}) {
         </section>
     </div>`;
 
-    const renderZone = id => {
-        const zone = ZONES.find(item => item.id === id) || ZONES[0];
-        const exercises = zoneExercises(plan, zone);
-        container.querySelector(".zone-panel").innerHTML = `<span class="zone-icon">${zone.icon}</span><span class="lab-kicker">${zone.label.toUpperCase()}</span><h3>${zone.description}</h3><div class="zone-exercises">${exercises.length ? exercises.map(item => `<article><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.detail)}</span></article>`).join("") : `<p>No matching exercise is in this plan yet. Ask the AI Coach to add one.</p>`}</div><button type="button" class="secondary-button" data-open-workouts>View full workout library</button>`;
-        container.querySelector("[data-open-workouts]")?.addEventListener("click", () => document.querySelector('[data-tab="workouts"]')?.click());
-    };
-    container.querySelectorAll("[data-zone]").forEach(button => button.addEventListener("click", () => {
-        container.querySelectorAll("[data-zone]").forEach(item => item.classList.toggle("active", item === button));
-        renderZone(button.dataset.zone);
-    }));
-    renderZone("strength");
+    renderVirtualGym(container.querySelector("#virtual-gym-root"), plan);
     container.querySelector("#pb-form")?.addEventListener("submit", event => {
         event.preventDefault();
         const result = Object.fromEntries(new FormData(event.currentTarget));
@@ -97,18 +74,6 @@ function renderPBVault(series) {
     }).join("");
 }
 
-function zoneExercises(plan, zone) {
-    const values = [...(plan.exercises || []), ...(plan.workouts || []).flatMap(workout => workout.exercises || [])];
-    const unique = new Map();
-    values.forEach(value => {
-        const item = typeof value === "string" ? { name: value } : value || {};
-        const name = item.name || item.exercise || item.title;
-        if (!name) return;
-        const text = `${name} ${item.type || ""} ${item.notes || ""}`.toLowerCase();
-        if (zone.tags.some(tag => text.includes(tag))) unique.set(name, { name, detail: item.sets ? `${item.sets} sets · ${item.reps || item.duration || "quality reps"}` : item.duration || item.reps || "Programme exercise" });
-    });
-    return [...unique.values()].slice(0, 5);
-}
 function athleteLevel(data) { const xp = data.workoutLogs.filter(item => item.status === "completed").length * 120 + data.readiness.length * 25 + data.performanceTests.length * 60; return `${Math.floor(xp / 500) + 1}`; }
 function trainingFingerprint(data) { const completed = data.workoutLogs.filter(item => item.status === "completed"); return completed.length ? `${completed.length} sessions · ${Math.round(completed.reduce((sum, item) => sum + Number(item.rpe || 0), 0) / completed.length * 10) / 10} avg RPE` : "Complete a workout to reveal it"; }
 function nextUnlock(data) { const count = data.workoutLogs.filter(item => item.status === "completed").length; const next = Math.ceil((count + 1) / 5) * 5; return `${next - count} session${next - count === 1 ? "" : "s"} to ${next}-workout badge`; }

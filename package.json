@@ -4,7 +4,7 @@
   "type": "module",
   "main": "script.js",
   "scripts": {
-    "test": "node --test test/appStore.test.js test/auth.test.js test/normalisePlan.test.js test/staticPlan.test.js test/athleteLab.test.js",
+    "test": "node --test test/appStore.test.js test/auth.test.js test/normalisePlan.test.js test/staticPlan.test.js test/athleteLab.test.js test/virtualGym.test.js",
     "test:integration": "node --test test/integration.test.js",
     "test:release": "npm test && npm run test:integration",
     "doctor": "node scripts/doctor.js",
