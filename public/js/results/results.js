@@ -21,6 +21,7 @@ import { renderAccount } from "./account.js";
 import { renderToolkit } from "./toolkit.js";
 import { renderActivityHistory } from "./activityHistory.js";
 import { initialiseTutorial } from "./tutorial.js";
+import { renderAthleteLab } from "./athleteLab.js";
 
 export function loadDashboard(rawPlan) {
 
@@ -138,6 +139,8 @@ export function loadDashboard(rawPlan) {
     if(coach)renderCoach(coach, { demoMode });
     const toolkit=getTab("toolkit-tab");
     if(toolkit)renderToolkit(toolkit, plan, () => loadDashboard(rawPlan));
+    const lab=getTab("lab-tab");
+    if(lab)renderAthleteLab(lab, plan, () => loadDashboard(rawPlan));
     const account=getTab("account-tab");
     if(account) {
         if (demoMode) account.innerHTML = `<section class="dashboard-section demo-account"><div class="section-header"><h2>Demo athlete</h2><p>This is realistic sample data for exploring Athlos. Create an account to build and securely save your own plan.</p></div><button class="primary-button" data-exit-demo type="button">Exit demo and create an account</button></section>`;

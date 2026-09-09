@@ -189,6 +189,7 @@ export function createDashboard(plan) {
         <button class="dashboard-tab" type="button" data-tab="activity">Activity</button>
         <button class="dashboard-tab" type="button" data-tab="coach">AI Coach</button>
         <button class="dashboard-tab" type="button" data-tab="toolkit">Toolkit</button>
+        <button class="dashboard-tab" type="button" data-tab="lab">Athlete Lab</button>
         <button class="dashboard-tab" type="button" data-tab="account">Account</button>
 
 
@@ -252,6 +253,7 @@ export function createDashboard(plan) {
         <section id="activity-tab" class="dashboard-page"></section>
         <section id="coach-tab" class="dashboard-page"></section>
         <section id="toolkit-tab" class="dashboard-page"></section>
+        <section id="lab-tab" class="dashboard-page"></section>
         <section id="account-tab" class="dashboard-page"></section>
 
 
