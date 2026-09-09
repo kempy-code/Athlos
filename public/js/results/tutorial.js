@@ -1,9 +1,10 @@
 const STORAGE_KEY = "athlos_tutorial_complete_v1";
+const DISMISSED_KEY = "athlos_tutorial_dismissed";
 
 const steps = [
     { selector: ".dashboard-hero", title: "Your training headquarters", body: "See the shape of your program and start the next session without hunting through menus." },
     { selector: ".dashboard-stats", title: "Your plan at a glance", body: "These quick facts keep the key targets visible while you train." },
-    { selector: ".dashboard-tabs", title: "Everything has a home", body: "Open your schedule, workouts, nutrition, progress, activity history, AI Coach and athlete tools here." },
+    { selector: ".dashboard-tabs", title: "Everything has a home", body: "Use the workspace navigation to move between today, your schedule, training, fuel, progress, logbook and coaching tools." },
     { selector: "[data-tab='activity']", title: "Build your training history", body: "Log completed sessions and review what you did, how it felt and how your performance changes." },
     { selector: "[data-tab='coach']", title: "Meet your AI Coach", body: "Ask questions about your plan, recovery or upcoming sessions. It uses your Athlos context to make answers more useful." },
     { selector: "#start-next-workout-btn", title: "You are ready", body: "Start the next workout when you are ready. You can replay this tour at any time from the Tour button." }
@@ -13,7 +14,7 @@ export function initialiseTutorial(dashboard) {
     const replay = dashboard.querySelector("#dashboard-help-btn");
     replay?.addEventListener("click", () => startTutorial(dashboard));
 
-    if (!localStorage.getItem(STORAGE_KEY)) {
+    if (!localStorage.getItem(STORAGE_KEY) && !sessionStorage.getItem(DISMISSED_KEY)) {
         window.setTimeout(() => showWelcome(dashboard), 450);
     }
 }
@@ -28,7 +29,7 @@ function showWelcome(dashboard) {
     dialog.innerHTML = `<div class="tutorial-welcome-card"><span class="eyebrow">WELCOME TO ATHLOS</span><h2 id="tutorial-welcome-title">Find your feet in 60 seconds</h2><p>Take a quick tour of your plan, workout history and AI coaching tools.</p><div><button class="secondary-button" type="button" data-tutorial-later>Maybe later</button><button class="primary-button" type="button" data-tutorial-start>Start tour</button></div></div>`;
     document.body.append(dialog);
     dialog.querySelector("[data-tutorial-start]").addEventListener("click", () => { dialog.remove(); startTutorial(dashboard); });
-    dialog.querySelector("[data-tutorial-later]").addEventListener("click", () => dialog.remove());
+    dialog.querySelector("[data-tutorial-later]").addEventListener("click", () => { sessionStorage.setItem(DISMISSED_KEY, "true"); dialog.remove(); });
     dialog.querySelector("[data-tutorial-start]").focus();
 }
 

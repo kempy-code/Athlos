@@ -124,79 +124,22 @@ export function createDashboard(plan) {
 
 
 
-    <div class="dashboard-command-bar">
-    <nav class="dashboard-tabs" aria-label="Dashboard sections">
-
-
-        <button
-            class="dashboard-tab active"
-            type="button"
-            aria-current="page"
-            data-tab="home">
-
-            Home
-
-        </button>
-
-
-
-
-        <button
-            class="dashboard-tab"
-            type="button"
-            data-tab="calendar">
-
-            Calendar
-
-        </button>
-
-
-
-
-        <button
-            class="dashboard-tab"
-            type="button"
-            data-tab="workouts">
-
-            Workouts
-
-        </button>
-
-
-
-
-        <button
-            class="dashboard-tab"
-            type="button"
-            data-tab="nutrition">
-
-            Nutrition
-
-        </button>
-
-
-
-
-        <button
-            class="dashboard-tab"
-            type="button"
-            data-tab="progress">
-
-            Progress
-
-        </button>
-
-        <button class="dashboard-tab" type="button" data-tab="activity">Activity</button>
-        <button class="dashboard-tab" type="button" data-tab="coach">AI Coach</button>
-        <button class="dashboard-tab" type="button" data-tab="toolkit">Toolkit</button>
-        <button class="dashboard-tab" type="button" data-tab="lab">Athlete Lab</button>
-        <button class="dashboard-tab" type="button" data-tab="account">Account</button>
-
-
-
-    </nav>
-    <button class="dashboard-help-button" id="dashboard-help-btn" type="button" aria-label="Open the Athlos tutorial">Tour</button>
-    </div>
+    <aside class="dashboard-command-bar">
+        <div class="sidebar-brand"><span>A</span><div><strong>ATHLOS</strong><small>Performance workspace</small></div></div>
+        <span class="sidebar-label">Workspace</span>
+        <nav class="dashboard-tabs" aria-label="Dashboard sections">
+            <button class="dashboard-tab active" type="button" aria-current="page" data-tab="home">Today</button>
+            <button class="dashboard-tab" type="button" data-tab="calendar">Schedule</button>
+            <button class="dashboard-tab" type="button" data-tab="workouts">Training</button>
+            <button class="dashboard-tab" type="button" data-tab="nutrition">Fuel</button>
+            <button class="dashboard-tab" type="button" data-tab="progress">Progress</button>
+            <button class="dashboard-tab" type="button" data-tab="activity">Logbook</button>
+            <button class="dashboard-tab" type="button" data-tab="coach">AI Coach</button>
+            <button class="dashboard-tab" type="button" data-tab="toolkit">Tools</button>
+            <button class="dashboard-tab" type="button" data-tab="account">Profile</button>
+        </nav>
+        <div class="sidebar-support"><span>New to Athlos?</span><button class="dashboard-help-button" id="dashboard-help-btn" type="button">Open product tour</button></div>
+    </aside>
 
 
 
@@ -253,7 +196,6 @@ export function createDashboard(plan) {
         <section id="activity-tab" class="dashboard-page"></section>
         <section id="coach-tab" class="dashboard-page"></section>
         <section id="toolkit-tab" class="dashboard-page"></section>
-        <section id="lab-tab" class="dashboard-page"></section>
         <section id="account-tab" class="dashboard-page"></section>
 
 

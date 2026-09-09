@@ -1,6 +1,6 @@
-const CACHE = "athlos-shell-v8";
+const CACHE = "athlos-shell-v9";
 const ROOT = self.registration.scope;
-const SHELL = ["./","./index.html","./manifest.webmanifest","./athlos-mark.svg","./css/style.css","./css/auth.css","./css/results/virtualGym.css","./js/script.js","./js/api.js","./js/staticPlan.js","./js/demoPlan.js","./js/results/virtualGym.js","./vendor/three.module.min.js","./vendor/three.core.min.js"].map(path => new URL(path, ROOT).href);
+const SHELL = ["./","./index.html","./manifest.webmanifest","./athlos-mark.svg","./css/style.css","./css/auth.css","./js/script.js","./js/api.js","./js/staticPlan.js","./js/demoPlan.js"].map(path => new URL(path, ROOT).href);
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", event => {
