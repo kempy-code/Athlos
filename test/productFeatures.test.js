@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { dailyRecommendation } from "../public/js/results/results.js";
 import { rescheduleWorkouts } from "../public/js/results/calendar.js";
-import { progressionSuggestion } from "../public/js/results/workoutModal.js";
+import { createInitialSets, progressionSuggestion } from "../public/js/results/workoutModal.js";
+import { muscleGroupsForWorkout } from "../public/js/results/muscleMap.js";
 import { buildIntervalWorkout } from "../public/js/results/toolkit.js";
 import { activitiesCsv } from "../public/js/results/activityHistory.js";
 import { monthlyReport } from "../public/js/results/progress.js";
@@ -42,6 +43,20 @@ test("progression requires completed manageable training", () => {
     assert.equal(progressionSuggestion({ rpe:7, exerciseDetails:[{ completed:true }] }).level,"progress");
     assert.equal(progressionSuggestion({ rpe:9, exerciseDetails:[{ completed:true }] }).level,"hold");
     assert.equal(progressionSuggestion({ rpe:6, exerciseDetails:[{ completed:false }] }).level,"repeat");
+});
+
+test("workout tracker creates individual editable sets from the prescription", () => {
+    const sets=createInitialSets({sets:"3",reps:"8"},{sets:[{weight:"60",reps:"8"},{weight:"62.5",reps:"8"},{weight:"62.5",reps:"7"}]});
+    assert.equal(sets.length,3);
+    assert.deepEqual(sets.map(set=>set.weight),["60","62.5","62.5"]);
+    assert.ok(sets.every(set=>set.completed===false));
+});
+
+test("muscle map derives training emphasis from workout exercises", () => {
+    const muscles=muscleGroupsForWorkout({exercises:[{name:"Back Squat",sets:4},{name:"Bench Press",sets:3}]});
+    assert.equal(muscles.quads,4);
+    assert.equal(muscles.glutes,4);
+    assert.equal(muscles.chest,3);
 });
 
 test("interval builder creates a safe scheduled workout", () => {

@@ -298,12 +298,21 @@ app.get("/api/coach/comments",requireAuth,(req,res)=>res.json({comments:getCoach
 app.get("/api/coach/messages",requireAuth,(req,res)=>res.json({messages:getCoachMessages(req.user.id,30)}));
 app.delete("/api/coach/messages",requireAuth,(req,res)=>{clearCoachMessages(req.user.id);res.json({success:true});});
 
+const coachPlanChangeSchema={type:"object",additionalProperties:false,required:["summary","changes"],properties:{summary:{type:"string"},changes:{type:"array",minItems:1,maxItems:7,items:{type:"object",additionalProperties:false,required:["workout_index","new_day","new_name","purpose_append","volume_multiplier"],properties:{workout_index:{type:"integer",minimum:0},new_day:{type:"string"},new_name:{type:"string"},purpose_append:{type:"string"},volume_multiplier:{type:"number",minimum:.5,maximum:1.25}}}}}};
+
 app.post("/api/coach",requireAuth,generationRateLimit,async(req,res)=>{
     try {
         if(!openai)return res.status(503).json({error:"AI Coach is not configured"});
         const message=String(req.body?.message||"").trim();
         if(!message||message.length>2000)return res.status(400).json({error:"Enter a message under 2,000 characters"});
         const data=getUserData(req.user.id);
+        if(req.body?.modifyPlan){
+            if(!data.currentPlan?.workouts?.length)return res.status(400).json({error:"Create a training plan before asking the coach to modify it"});
+            const proposal=await openai.responses.create({model:OPENAI_MODEL,input:[{role:"system",content:"You safely adjust an athlete training plan. Return only the requested structured changes. Preserve the goal of each session, avoid large load jumps, never prescribe through pain, and use an empty string for any field that should remain unchanged."},{role:"user",content:`Requested change: ${message}\nCurrent workouts: ${JSON.stringify(data.currentPlan.workouts.map((workout,index)=>({index,day:workout.day,name:workout.name||workout.session_name,type:workout.type,purpose:workout.purpose,exerciseCount:(workout.exercises||workout.main_workout||[]).length})))}`}],text:{format:{type:"json_schema",name:"athlos_plan_changes",strict:true,schema:coachPlanChangeSchema}},max_output_tokens:700});
+            const parsed=JSON.parse(proposal.output_text),plan=applyCoachPlanChanges(data.currentPlan,parsed.changes);
+            addCoachMessage(req.user.id,"user",message);addCoachMessage(req.user.id,"assistant",parsed.summary);
+            return res.json({message:parsed.summary,plan,changes:parsed.changes});
+        }
         const history=getCoachMessages(req.user.id,10).map(({role,content})=>({role,content}));
         const response=await openai.responses.create({model:OPENAI_MODEL,instructions:`You are Athlos Coach, a concise, encouraging training assistant. Use the athlete's stored plan and logs. Never diagnose injuries or replace medical care. If pain, serious symptoms, eating disorders, or unsafe training are mentioned, recommend stopping and consulting an appropriate qualified professional. Do not invent completed workouts or measurements. Give practical next actions and explain plan adjustments. Athlete context: ${JSON.stringify({profile:data.profile||{},plan:data.currentPlan||null,recentLogs:(data.workoutLogs||[]).slice(-5),readiness:(data.readiness||[]).slice(-3)})}`,input:[...history,{role:"user",content:message}],max_output_tokens:500});
         const answer=response.output_text?.trim()||"I couldn’t create a coaching response. Please try again.";
@@ -311,6 +320,8 @@ app.post("/api/coach",requireAuth,generationRateLimit,async(req,res)=>{
         res.json({message:answer});
     } catch(error){console.error("Coach error",error);res.status(500).json({error:"The AI Coach is temporarily unavailable"});}
 });
+
+function applyCoachPlanChanges(plan,changes){const workouts=plan.workouts.map((workout,index)=>{const change=changes.find(item=>item.workout_index===index);if(!change)return workout;const exercises=workout.exercises||workout.main_workout||[],keep=Math.max(1,Math.ceil(exercises.length*change.volume_multiplier)),next={...workout};if(change.new_day)next.day=change.new_day;if(change.new_name){next.name=change.new_name;if("session_name" in next)next.session_name=change.new_name;}if(change.purpose_append)next.purpose=`${workout.purpose||""} ${change.purpose_append}`.trim();if(Array.isArray(workout.exercises))next.exercises=exercises.slice(0,keep);if(Array.isArray(workout.main_workout))next.main_workout=exercises.slice(0,keep);return next;});return{...plan,workouts,coachModification:{createdAt:new Date().toISOString(),changes}};}
 
 
 

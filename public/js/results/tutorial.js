@@ -20,7 +20,7 @@ export function initialiseTutorial(dashboard) {
 }
 
 function showWelcome(dashboard) {
-    if (document.querySelector(".tutorial-welcome")) return;
+    if (document.querySelector(".tutorial-welcome") || document.querySelector(".workout-modal") || !document.body.contains(dashboard)) return;
     const dialog = document.createElement("div");
     dialog.className = "tutorial-welcome";
     dialog.setAttribute("role", "dialog");

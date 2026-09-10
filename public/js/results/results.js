@@ -139,7 +139,7 @@ export function loadDashboard(rawPlan) {
     if(activity)renderActivityHistory(activity, () => loadDashboard(rawPlan));
 
     const coach=getTab("coach-tab");
-    if(coach)renderCoach(coach, { demoMode });
+    if(coach)renderCoach(coach, { demoMode, onPlanChanged: updated => { savePlan(updated); loadDashboard(updated); } });
     const toolkit=getTab("toolkit-tab");
     if(toolkit)renderToolkit(toolkit, plan, () => loadDashboard(rawPlan));
     const account=getTab("account-tab");

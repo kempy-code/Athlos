@@ -1,3 +1,5 @@
+import { renderMuscleMap } from "./muscleMap.js";
+
 // =====================================
 // ATHLOS WORKOUT RENDERER
 // public/js/results/workouts.js
@@ -66,6 +68,8 @@ function createWorkoutCard(workout, index) {
                 <div><strong>Duration</strong><span>${escapeHtml(duration)}</span></div>
                 <div><strong>Focus</strong><span>${escapeHtml(purpose)}</span></div>
             </div>
+
+            ${renderMuscleMap({...session,name,type,purpose,exercises},true)}
 
             <div class="workout-section">
                 <h4>Warm Up</h4>

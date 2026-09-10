@@ -1,6 +1,9 @@
 import { getWorkoutLogs, readinessRecommendation, saveReadiness, saveWorkoutLog } from "../appStore.js";
+import { renderMuscleMap } from "./muscleMap.js";
 
 export function openWorkoutModal(workout, onSaved = () => {}) {
+    document.querySelector(".tutorial-welcome")?.remove();
+    document.querySelector(".tutorial-layer")?.remove();
     const previousLog=getWorkoutLogs().filter(log=>log.workoutName===workout.name&&Array.isArray(log.exerciseDetails)).at(-1);
     const modal = document.createElement("div");
     modal.className = "workout-modal";
@@ -11,11 +14,12 @@ export function openWorkoutModal(workout, onSaved = () => {}) {
         <button class="modal-close" type="button" aria-label="Close workout">×</button>
         <div class="modal-heading"><span>${escapeHtml(workout.day)}</span><h2>${escapeHtml(workout.name)}</h2><p>Check your readiness, complete each exercise, then save the session.</p></div>
         <div class="live-timer" aria-live="polite"><div><span>SESSION TIME</span><strong id="session-clock">00:00</strong></div><div class="timer-actions"><button type="button" data-timer="toggle">Start</button><button type="button" data-timer="rest">Rest 60s</button><button type="button" data-timer="reset">Reset</button></div><p id="rest-status"></p></div>
+        ${renderMuscleMap(workout)}
         <form id="workout-log-form">
             <fieldset class="readiness-fieldset"><legend>Today’s readiness</legend>${range("Energy", "energy", 3)}${range("Sleep quality", "sleep", 3)}${range("Soreness", "soreness", 2)}${range("Stress", "stress", 2)}${range("Pain", "pain", 1)}</fieldset>
             <div id="readiness-guidance" class="readiness-guidance"></div>
             ${previousLog ? progressionBanner(previousLog) : ""}
-            <fieldset><legend>Exercises</legend>${previousLog?'<p class="previous-session-note">Previous performance is shown beneath each exercise.</p>':""}<div class="modal-exercises">${workout.exercises.map((exercise, index) => exerciseRow(exercise, index,previousLog)).join("") || "<p>No exercises listed.</p>"}</div></fieldset>
+            <fieldset><legend>Exercises</legend>${previousLog?'<p class="previous-session-note">Each set shows the matching result from your last session.</p>':""}<div class="modal-exercises">${workout.exercises.map((exercise, index) => exerciseRow(exercise, index,previousLog)).join("") || "<p>No exercises listed.</p>"}</div></fieldset>
             <label class="form-label">Session effort (RPE)<select name="rpe">${Array.from({length:10}, (_, index) => `<option value="${index + 1}" ${index === 6 ? "selected" : ""}>${index + 1}/10</option>`).join("")}</select></label>
             <label class="form-label">Session notes<textarea name="notes" rows="3" placeholder="What felt strong? What should change next time?"></textarea></label>
             <div class="modal-actions"><button class="secondary-button save-progress" type="button">Save progress</button><button class="primary-button" type="submit">Complete workout</button></div>
@@ -31,7 +35,7 @@ export function openWorkoutModal(workout, onSaved = () => {}) {
     let restSeconds = 0;
     const clock = modal.querySelector("#session-clock");
     const restStatus = modal.querySelector("#rest-status");
-    const renderTime = () => { clock.textContent = `${String(Math.floor(elapsedSeconds / 60)).padStart(2,"0")}:${String(elapsedSeconds % 60).padStart(2,"0")}`; restStatus.textContent = restSeconds ? `Rest: ${restSeconds}s` : ""; };
+    const renderTime = () => { clock.textContent = `${String(Math.floor(elapsedSeconds / 60)).padStart(2,"0")}:${String(elapsedSeconds % 60).padStart(2,"0")}`; restStatus.textContent = restSeconds ? `Rest: ${restSeconds}s` : (restStatus.dataset.summary||""); };
     const stopTimer = () => { clearInterval(timerId); timerId = null; modal.querySelector('[data-timer="toggle"]').textContent = "Start"; };
     const startTimer = () => { if (timerId) return; modal.querySelector('[data-timer="toggle"]').textContent = "Pause"; timerId = setInterval(() => { elapsedSeconds += 1; if (restSeconds > 0) restSeconds -= 1; renderTime(); }, 1000); };
     const close = () => { stopTimer(); modal.remove(); document.body.classList.remove("modal-open"); };
@@ -59,17 +63,21 @@ export function openWorkoutModal(workout, onSaved = () => {}) {
         button.textContent = "Replaced";
         button.disabled = true;
     }));
+    modal.querySelectorAll("[data-add-set]").forEach(button=>button.addEventListener("click",()=>{const exercise=button.closest(".modal-exercise"),body=exercise.querySelector(".set-rows"),rows=[...body.querySelectorAll(".set-row")],last=rows.at(-1),next=createSetRow(rows.length,{weight:last?.querySelector('[name="setWeight"]')?.value||"",reps:last?.querySelector('[name="setReps"]')?.value||"",rpe:"",type:"working"},null);body.insertAdjacentHTML("beforeend",next);updateWorkoutSummary(modal);body.querySelector(".set-row:last-child [name='setWeight']")?.focus();}));
+    modal.addEventListener("click",event=>{const remove=event.target.closest("[data-remove-set]");if(remove){const rows=remove.closest(".set-rows");if(rows.children.length>1)remove.closest(".set-row").remove();updateWorkoutSummary(modal);return;}const complete=event.target.closest("[data-set-complete]");if(complete){complete.closest(".set-row").classList.toggle("complete",complete.checked);if(complete.checked){restSeconds=Number(complete.closest(".modal-exercise").dataset.restSeconds)||60;startTimer();renderTime();}updateWorkoutSummary(modal);}});
+    modal.addEventListener("input",()=>updateWorkoutSummary(modal));
     modal.querySelector(".modal-close").addEventListener("click", close);
     modal.addEventListener("click", event => { if (event.target === modal) close(); });
     const save = status => {
         const { values, recommendation } = updateGuidance();
-        const completedExercises = form.querySelectorAll('input[name="exercise"]:checked').length;
+        const completedExercises = [...form.querySelectorAll(".modal-exercise")].filter(row=>[...row.querySelectorAll('[data-set-complete]')].every(input=>input.checked)).length;
         const exerciseDetails = [...form.querySelectorAll(".modal-exercise")].map(row => ({
             name: row.dataset.exerciseName,
-            completed: row.querySelector('[name="exercise"]').checked,
-            actualSets: Number(row.querySelector('[name="actualSets"]').value || 0),
-            actualReps: row.querySelector('[name="actualReps"]').value,
-            load: row.querySelector('[name="load"]').value
+            completed: [...row.querySelectorAll('[data-set-complete]')].every(input=>input.checked),
+            sets: [...row.querySelectorAll(".set-row")].map(set=>({type:set.querySelector('[name="setType"]').value,weight:set.querySelector('[name="setWeight"]').value,reps:set.querySelector('[name="setReps"]').value,rpe:set.querySelector('[name="setRpe"]').value,completed:set.querySelector('[data-set-complete]').checked})),
+            actualSets: row.querySelectorAll('[data-set-complete]:checked').length,
+            actualReps: row.querySelector(".set-row:last-child [name='setReps']")?.value||"",
+            load: row.querySelector(".set-row:last-child [name='setWeight']")?.value||""
         }));
         saveReadiness({ energy: Number(values.energy), sleep: Number(values.sleep), soreness: Number(values.soreness), stress: Number(values.stress), pain: Number(values.pain), recommendation });
         saveWorkoutLog({ workoutName: workout.name, workoutDay: workout.day, status, completedExercises, totalExercises: workout.exercises.length, exerciseDetails, durationMinutes: Math.max(1, Math.round(elapsedSeconds / 60)), rpe: Number(values.rpe), notes: values.notes || "", recommendation });
@@ -80,6 +88,7 @@ export function openWorkoutModal(workout, onSaved = () => {}) {
     modal.querySelector(".save-progress").addEventListener("click", event => { event.preventDefault(); save("in-progress"); });
     modal.addEventListener("keydown", event => { if (event.key === "Escape") close(); });
     updateGuidance();
+    updateWorkoutSummary(modal);
     renderTime();
     modal.querySelector(".modal-close").focus();
 }
@@ -97,7 +106,13 @@ export function progressionSuggestion(previousLog) {
 function progressionBanner(previousLog) { const suggestion=progressionSuggestion(previousLog); return `<aside class="progression-suggestion ${suggestion.level}"><span>NEXT-SESSION GUIDANCE</span><strong>${escapeHtml(suggestion.title)}</strong><p>${escapeHtml(suggestion.text)}</p></aside>`; }
 
 function range(label, name, value) { return `<label class="readiness-control"><span>${label}</span><input type="range" name="${name}" min="1" max="5" value="${value}"><output>${value}/5</output></label>`; }
-function exerciseRow(exercise, index, previousLog) { const previous=previousLog?.exerciseDetails?.find(item=>item.name===exercise.name);return `<div class="modal-exercise" data-exercise-name="${escapeHtml(exercise.name)}"><label class="exercise-check"><input type="checkbox" name="exercise" value="${index}"><span><strong class="exercise-title">${escapeHtml(exercise.name)}</strong><small>${escapeHtml(`${exercise.sets} sets • ${exercise.reps} • ${exercise.rest} rest`)}</small>${previous?`<small class="previous-value">Last: ${escapeHtml(previous.actualSets)} × ${escapeHtml(previous.actualReps)} ${previous.load?`· ${escapeHtml(previous.load)}`:""}</small>`:""}<small class="substitution-reason"></small></span></label><button class="substitute-button" data-substitute type="button">Replace exercise</button><div class="actual-performance"><label>Sets<input name="actualSets" type="number" min="0" max="20" value="${Number(exercise.sets) || ""}" inputmode="numeric"></label><label>Reps / time<input name="actualReps" value="${escapeHtml(exercise.reps)}"></label><label>Load<input name="load" placeholder="${escapeHtml(previous?.load||"e.g. 40 kg")}"></label></div></div>`; }
+function exerciseRow(exercise, index, previousLog) { const previous=previousLog?.exerciseDetails?.find(item=>item.name===exercise.name),sets=createInitialSets(exercise,previous);return `<article class="modal-exercise" data-exercise-name="${escapeHtml(exercise.name)}" data-rest-seconds="${parseRest(exercise.rest)}"><header class="exercise-set-heading"><div><span>${index+1}</span><div><strong class="exercise-title">${escapeHtml(exercise.name)}</strong><small>${escapeHtml(exercise.coaching_notes||`${exercise.reps} · ${exercise.rest} rest`)}</small><small class="substitution-reason"></small></div></div><button class="substitute-button" data-substitute type="button">Replace</button></header><div class="set-table-header"><span>Set</span><span>Previous</span><span>kg</span><span>Reps</span><span>RPE</span><span aria-label="Complete">✓</span><span></span></div><div class="set-rows">${sets.map((set,setIndex)=>createSetRow(setIndex,set,previousSet(previous,setIndex))).join("")}</div><button class="add-set-button" data-add-set type="button">＋ Add set</button></article>`; }
+
+export function createInitialSets(exercise,previous) { const count=Math.max(1,Math.min(20,parseInt(exercise?.sets)||previous?.sets?.length||1));return Array.from({length:count},(_,index)=>{const old=previousSet(previous,index);return{type:old?.type||"working",weight:old?.weight??previous?.load??"",reps:old?.reps??exercise?.reps??"",rpe:old?.rpe??"",completed:false};}); }
+function previousSet(previous,index){if(Array.isArray(previous?.sets))return previous.sets[index]||null;if(!previous)return null;return index<Number(previous.actualSets||0)?{weight:previous.load,reps:previous.actualReps,type:"working"}:null;}
+function createSetRow(index,set,previous){const prior=previous?[previous.weight,previous.reps].filter(value=>value!==""&&value!=null).join(" × "):"—";return `<div class="set-row"><label><span class="sr-only">Set ${index+1} type</span><select name="setType" aria-label="Set ${index+1} type"><option value="working" ${set.type==="working"?"selected":""}>${index+1}</option><option value="warmup" ${set.type==="warmup"?"selected":""}>W</option><option value="drop" ${set.type==="drop"?"selected":""}>D</option><option value="failure" ${set.type==="failure"?"selected":""}>F</option></select></label><span class="previous-set">${escapeHtml(prior)}</span><label><span class="sr-only">Set ${index+1} weight</span><input name="setWeight" inputmode="decimal" value="${escapeHtml(set.weight)}" placeholder="0"></label><label><span class="sr-only">Set ${index+1} repetitions</span><input name="setReps" inputmode="numeric" value="${escapeHtml(set.reps)}" placeholder="0"></label><label><span class="sr-only">Set ${index+1} RPE</span><input name="setRpe" inputmode="decimal" value="${escapeHtml(set.rpe)}" placeholder="—"></label><label class="set-complete"><input data-set-complete type="checkbox" aria-label="Complete set ${index+1}" ${set.completed?"checked":""}><i>✓</i></label><button data-remove-set type="button" aria-label="Remove set ${index+1}">×</button></div>`;}
+function parseRest(value){const number=parseInt(value);return Number.isFinite(number)?Math.max(15,Math.min(600,number)):60;}
+function updateWorkoutSummary(modal){const rows=[...modal.querySelectorAll(".set-row")],complete=rows.filter(row=>row.querySelector('[data-set-complete]')?.checked),volume=complete.reduce((sum,row)=>sum+(Number(row.querySelector('[name="setWeight"]')?.value)||0)*(Number(row.querySelector('[name="setReps"]')?.value)||0),0);modal.querySelector("#rest-status").dataset.summary=`${complete.length}/${rows.length} sets · ${Math.round(volume).toLocaleString()} kg volume`;if(!restSeconds)modal.querySelector("#rest-status").textContent=modal.querySelector("#rest-status").dataset.summary;}
 function substituteExercise(name) {
     const text = String(name).toLowerCase();
     const rules = [
