@@ -14,6 +14,7 @@ export function openWorkoutModal(workout, onSaved = () => {}) {
         <form id="workout-log-form">
             <fieldset class="readiness-fieldset"><legend>Today’s readiness</legend>${range("Energy", "energy", 3)}${range("Sleep quality", "sleep", 3)}${range("Soreness", "soreness", 2)}${range("Stress", "stress", 2)}${range("Pain", "pain", 1)}</fieldset>
             <div id="readiness-guidance" class="readiness-guidance"></div>
+            ${previousLog ? progressionBanner(previousLog) : ""}
             <fieldset><legend>Exercises</legend>${previousLog?'<p class="previous-session-note">Previous performance is shown beneath each exercise.</p>':""}<div class="modal-exercises">${workout.exercises.map((exercise, index) => exerciseRow(exercise, index,previousLog)).join("") || "<p>No exercises listed.</p>"}</div></fieldset>
             <label class="form-label">Session effort (RPE)<select name="rpe">${Array.from({length:10}, (_, index) => `<option value="${index + 1}" ${index === 6 ? "selected" : ""}>${index + 1}/10</option>`).join("")}</select></label>
             <label class="form-label">Session notes<textarea name="notes" rows="3" placeholder="What felt strong? What should change next time?"></textarea></label>
@@ -82,6 +83,18 @@ export function openWorkoutModal(workout, onSaved = () => {}) {
     renderTime();
     modal.querySelector(".modal-close").focus();
 }
+
+export function progressionSuggestion(previousLog) {
+    const exercises = Array.isArray(previousLog?.exerciseDetails) ? previousLog.exerciseDetails : [];
+    const completed = exercises.length > 0 && exercises.every(item => item.completed);
+    const effort = Number(previousLog?.rpe || 0);
+    if (!completed) return { level:"repeat", title:"Repeat before progressing", text:"Complete the planned work with consistent technique before increasing load or volume." };
+    if (effort >= 9) return { level:"hold", title:"Hold the current training load", text:"The previous session was very demanding. Repeat or slightly reduce the load rather than progressing today." };
+    if (effort > 0 && effort <= 7) return { level:"progress", title:"Small progression available", text:"The previous session was completed at a manageable effort. Add one repetition or approximately 2–5% load while keeping technique consistent." };
+    return { level:"repeat", title:"Build another quality exposure", text:"Repeat the planned targets and record effort so Athlos can recommend the next progression." };
+}
+
+function progressionBanner(previousLog) { const suggestion=progressionSuggestion(previousLog); return `<aside class="progression-suggestion ${suggestion.level}"><span>NEXT-SESSION GUIDANCE</span><strong>${escapeHtml(suggestion.title)}</strong><p>${escapeHtml(suggestion.text)}</p></aside>`; }
 
 function range(label, name, value) { return `<label class="readiness-control"><span>${label}</span><input type="range" name="${name}" min="1" max="5" value="${value}"><output>${value}/5</output></label>`; }
 function exerciseRow(exercise, index, previousLog) { const previous=previousLog?.exerciseDetails?.find(item=>item.name===exercise.name);return `<div class="modal-exercise" data-exercise-name="${escapeHtml(exercise.name)}"><label class="exercise-check"><input type="checkbox" name="exercise" value="${index}"><span><strong class="exercise-title">${escapeHtml(exercise.name)}</strong><small>${escapeHtml(`${exercise.sets} sets • ${exercise.reps} • ${exercise.rest} rest`)}</small>${previous?`<small class="previous-value">Last: ${escapeHtml(previous.actualSets)} × ${escapeHtml(previous.actualReps)} ${previous.load?`· ${escapeHtml(previous.load)}`:""}</small>`:""}<small class="substitution-reason"></small></span></label><button class="substitute-button" data-substitute type="button">Replace exercise</button><div class="actual-performance"><label>Sets<input name="actualSets" type="number" min="0" max="20" value="${Number(exercise.sets) || ""}" inputmode="numeric"></label><label>Reps / time<input name="actualReps" value="${escapeHtml(exercise.reps)}"></label><label>Load<input name="load" placeholder="${escapeHtml(previous?.load||"e.g. 40 kg")}"></label></div></div>`; }

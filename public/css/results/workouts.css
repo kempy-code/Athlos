@@ -70,3 +70,4 @@ body.modal-open { overflow: hidden; }
     .exercise-row { align-items: flex-start; flex-direction: column; }
     .exercise-stats { justify-content: flex-start; }
 }
+.progression-suggestion{display:grid;gap:5px;margin:-7px 0 22px;padding:14px 16px;border-left:4px solid #e64b16;border-radius:12px;background:#fff5ef}.progression-suggestion>span{color:#bc3b10;font-size:9px;font-weight:800;letter-spacing:.1em}.progression-suggestion p{margin:0;color:var(--dash-muted);font-size:12px;line-height:1.5}.progression-suggestion.hold{border-color:#b78a2f;background:#fff8e7}.progression-suggestion.repeat{border-color:#73767d;background:#f2f2ef}

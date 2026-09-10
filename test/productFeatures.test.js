@@ -2,6 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { dailyRecommendation } from "../public/js/results/results.js";
 import { rescheduleWorkouts } from "../public/js/results/calendar.js";
+import { progressionSuggestion } from "../public/js/results/workoutModal.js";
+import { buildIntervalWorkout } from "../public/js/results/toolkit.js";
+import { activitiesCsv } from "../public/js/results/activityHistory.js";
+import { monthlyReport } from "../public/js/results/progress.js";
 
 test("daily recommendation responds to readiness and training load", () => {
     const ready = dailyRecommendation({ readiness: [] }, { ratio: 0.9 });
@@ -32,4 +36,25 @@ test("calendar rescheduling swaps occupied days without losing sessions", () => 
         ["Tuesday", "Strength"],
         ["Monday", "Run"]
     ]);
+});
+
+test("progression requires completed manageable training", () => {
+    assert.equal(progressionSuggestion({ rpe:7, exerciseDetails:[{ completed:true }] }).level,"progress");
+    assert.equal(progressionSuggestion({ rpe:9, exerciseDetails:[{ completed:true }] }).level,"hold");
+    assert.equal(progressionSuggestion({ rpe:6, exerciseDetails:[{ completed:false }] }).level,"repeat");
+});
+
+test("interval builder creates a safe scheduled workout", () => {
+    const workout=buildIntervalWorkout({ sport:"Running",day:"Thursday",work:"2 min hard",recovery:"1 min easy",rounds:8 });
+    assert.equal(workout.day,"Thursday");
+    assert.equal(workout.exercises[0].sets,"8");
+    assert.match(workout.progression,/Add one round/);
+});
+
+test("activity export safely quotes commas and monthly report summarises work", () => {
+    const now=new Date("2026-09-11T12:00:00Z"),logs=[{completedAt:"2026-09-10T12:00:00Z",status:"completed",workoutName:"Run, easy",sportType:"run",durationMinutes:30,distanceKm:5,rpe:5,notes:"Good"}];
+    assert.match(activitiesCsv(logs),/"Run, easy"/);
+    const report=monthlyReport(logs,1,now);
+    assert.equal(report.sessions,1);
+    assert.equal(report.distance,"5.0");
 });

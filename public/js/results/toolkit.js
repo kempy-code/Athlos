@@ -46,6 +46,11 @@ export function renderToolkit(container, plan, refresh = () => {}) {
             <div class="block-timeline">${data.trainingBlocks.length?data.trainingBlocks.map((block,index)=>blockCard(block,index)).join(""):empty("Add your first training phase.")}</div>
         </section>
 
+        <section class="dashboard-section interval-builder-section">
+            <div class="section-header"><span class="toolkit-kicker">SESSION BUILDER</span><h2>Create an interval workout</h2><p>Build a repeatable running, cycling, swimming, or cardio session and add it directly to your schedule.</p></div>
+            <form class="block-form" id="interval-form"><label>Sport<select name="sport"><option>Running</option><option>Cycling</option><option>Swimming</option><option>Cardio</option></select></label><label>Day<select name="day">${["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map(day=>`<option>${day}</option>`).join("")}</select></label><label>Work interval<input name="work" placeholder="3 min hard" required></label><label>Recovery<input name="recovery" placeholder="2 min easy" required></label><label>Rounds<input name="rounds" type="number" min="1" max="30" value="6" required></label><button class="primary-button" type="submit">Add to schedule</button></form>
+        </section>
+
         <section class="dashboard-section challenge-section">
             <div class="section-header"><span class="toolkit-kicker">CONSISTENCY OVER EXCESS</span><h2>Personal challenges</h2><p>Create targets that reward sustainable training and recovery.</p></div>
             <form class="block-form" id="challenge-form"><label>Challenge<select name="metric"><option value="sessions">Sessions completed</option><option value="distance">Distance (km)</option><option value="recovery">Readiness check-ins</option></select></label><label>Target<input name="target" type="number" min="1" value="4"></label><label>Name<input name="name" placeholder="Consistent training week" required></label><button class="primary-button" type="submit">Create</button></form>
@@ -72,7 +77,13 @@ export function renderToolkit(container, plan, refresh = () => {}) {
     bindForms(container, data, refresh);
     bindIntegrations(container, refresh);
     bindNotifications(container, data);
+    container.querySelector("#interval-form").addEventListener("submit",event=>{event.preventDefault();const workout=buildIntervalWorkout(Object.fromEntries(new FormData(event.currentTarget)));savePlan({...plan,workouts:[...(plan.workouts||[]),workout]});refresh();});
     container.querySelector(".adaptive-apply")?.addEventListener("click",()=>{savePlan(adaptPlan(plan,adaptation));refresh();});
+}
+
+export function buildIntervalWorkout(values) {
+    const rounds=Math.max(1,Math.min(30,Number(values.rounds)||1)),sport=String(values.sport||"Cardio"),work=String(values.work||"Hard effort"),recovery=String(values.recovery||"Easy recovery");
+    return { day:String(values.day||"Monday"), name:`${sport} Intervals`, type:sport, purpose:`Develop ${sport.toLowerCase()} fitness with controlled repeat efforts.`, duration:"Custom", warmup:["10 minutes progressive preparation"], exercises:[{name:`${rounds} rounds: ${work} / ${recovery}`,category:"Intervals",equipment:sport,sets:String(rounds),reps:work,rest:recovery,coaching_notes:"Keep early repetitions controlled and finish with consistent technique."}], cooldown:["5–10 minutes easy movement","Refuel and record session effort"], progression:"Add one round only after completing every interval with consistent quality." };
 }
 
 function bindForms(container, data, refresh) {

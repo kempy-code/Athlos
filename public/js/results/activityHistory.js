@@ -6,7 +6,7 @@ export function renderActivityHistory(container, refresh = () => {}) {
     container.innerHTML = `
         <section class="activity-hero">
             <div><span>ATHLOS ACTIVITY</span><h2>Your training, remembered.</h2><p>Every planned and independent session in one history, across every sport.</p></div>
-            <div class="activity-hero-actions"><button class="secondary-button" id="start-live-activity" type="button">Start live activity</button><button class="primary-button" id="open-activity-form" type="button">Log manually</button></div>
+            <div class="activity-hero-actions"><button class="secondary-button" id="export-activities" type="button">Export CSV</button><button class="secondary-button" id="start-live-activity" type="button">Start live activity</button><button class="primary-button" id="open-activity-form" type="button">Log manually</button></div>
         </section>
         <section class="activity-summary">
             ${summaryCard("Activities",summary.count)}${summaryCard("Training time",formatMinutes(summary.minutes))}${summaryCard("Distance",summary.distance ? `${summary.distance.toFixed(1)} km` : "—")}${summaryCard("Average effort",summary.averageRpe ? `${summary.averageRpe}/10` : "—")}
@@ -37,6 +37,7 @@ export function renderActivityHistory(container, refresh = () => {}) {
 function bindActivityEvents(container, logs, refresh) {
     const dialog = container.querySelector("#manual-activity-dialog");
     container.querySelector("#open-activity-form").addEventListener("click", () => dialog.showModal());
+    container.querySelector("#export-activities").addEventListener("click", () => exportActivities(logs));
     container.querySelector("[data-close-dialog]").addEventListener("click", () => dialog.close());
     container.querySelector("#manual-activity-form").addEventListener("submit", event => {
         event.preventDefault();
@@ -64,6 +65,13 @@ function bindActivityEvents(container, logs, refresh) {
         container.querySelectorAll(".activity-row").forEach(item => item.classList.toggle("selected",item===button));
     }));
 }
+
+export function activitiesCsv(logs) {
+    const quote=value=>`"${String(value??"").replaceAll('"','""')}"`;
+    const rows=[["Date","Activity","Sport","Duration minutes","Distance km","Elevation metres","RPE","Notes"],...logs.map(log=>[log.completedAt,log.workoutName,inferSport(log),log.durationMinutes,log.distanceKm,log.elevationMetres,log.rpe,log.notes])];
+    return rows.map(row=>row.map(quote).join(",")).join("\n");
+}
+function exportActivities(logs){const blob=new Blob([activitiesCsv(logs)],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),anchor=document.createElement("a");anchor.href=url;anchor.download=`athlos-activities-${new Date().toISOString().slice(0,10)}.csv`;anchor.click();URL.revokeObjectURL(url);}
 
 function liveTrackerMarkup() {
     return `<dialog class="live-activity-dialog" id="live-activity-dialog"><div class="live-tracker">

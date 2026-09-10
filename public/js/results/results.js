@@ -22,6 +22,9 @@ import { renderToolkit } from "./toolkit.js";
 import { renderActivityHistory } from "./activityHistory.js";
 import { initialiseTutorial } from "./tutorial.js";
 
+let installPrompt = null;
+if (typeof window !== "undefined") window.addEventListener("beforeinstallprompt", event => { event.preventDefault(); installPrompt=event; });
+
 export function loadDashboard(rawPlan) {
 
     if (!rawPlan) {
@@ -147,8 +150,9 @@ export function loadDashboard(rawPlan) {
 
     const accountBar=document.createElement("div");
     accountBar.className="account-bar";
-    accountBar.innerHTML=demoMode ? `<span>Demo athlete · Sample training data</span><button type="button">Exit demo</button>` : `<span>Securely saved to your Athlos account</span><button type="button">Sign out</button>`;
-    accountBar.querySelector("button").addEventListener("click", demoMode ? exitDemo : logout);
+    accountBar.innerHTML=`<span data-connection-status>${demoMode ? "Demo athlete · Sample training data" : "Saved to your Athlos account"}</span><div class="account-bar-actions"><button data-theme-toggle type="button" aria-label="Change colour theme">Theme</button><button data-install-app type="button">Install app</button><button data-session-action type="button">${demoMode ? "Exit demo" : "Sign out"}</button></div>`;
+    accountBar.querySelector("[data-session-action]").addEventListener("click", demoMode ? exitDemo : logout);
+    initialiseExperience(accountBar,demoMode);
     dashboard.querySelector("[data-exit-demo]")?.addEventListener("click", exitDemo);
     dashboard.prepend(accountBar);
 
@@ -164,6 +168,13 @@ export function loadDashboard(rawPlan) {
     dashboard.addEventListener("athlos:start-workout", event => {
         openWorkoutModal(event.detail.workout, () => loadDashboard(rawPlan));
     });
+}
+
+function initialiseExperience(accountBar,demoMode){
+    const root=document.documentElement,theme=localStorage.getItem("athlos_theme")||"light",apply=value=>{root.dataset.theme=value;localStorage.setItem("athlos_theme",value);accountBar.querySelector("[data-theme-toggle]").textContent=value==="dark"?"Light mode":"Dark mode";};apply(theme);
+    accountBar.querySelector("[data-theme-toggle]").addEventListener("click",()=>apply(root.dataset.theme==="dark"?"light":"dark"));
+    const install=accountBar.querySelector("[data-install-app]");install.hidden=!installPrompt;install.addEventListener("click",async()=>{if(!installPrompt)return;await installPrompt.prompt();installPrompt=null;install.hidden=true;});
+    const status=accountBar.querySelector("[data-connection-status]"),update=()=>{status.textContent=!navigator.onLine?"Offline · changes stay on this device":demoMode?"Demo athlete · Sample training data":"Online · account sync active";};update();window.addEventListener("online",update,{once:true});window.addEventListener("offline",update,{once:true});
 }
 
 export function dailyRecommendation(data = getAppData(), load = getTrainingLoad()) {

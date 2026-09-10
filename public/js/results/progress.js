@@ -8,11 +8,13 @@ export function renderProgress(container, plan) {
     const review = getWeeklyReview();
     const records = getPersonalRecords();
     const safeBadges=achievementBadges(getWorkoutLogs(),getReadiness());
+    const report=monthlyReport(getWorkoutLogs(),plan.workouts?.length||0);
     container.insertAdjacentHTML("afterbegin", `<section class="dashboard-section progress-summary">
         <div class="section-header"><h2>Training Progress</h2><p>Your completed work and recent feedback</p></div>
         <div class="progress-stat-grid">${stat("Sessions complete", summary.completed)}${stat("Plan completion", `${summary.completionRate}%`)}${stat("Average effort", summary.averageRpe === "-" ? "-" : `${summary.averageRpe}/10`)}${stat("Latest readiness", readiness?.recommendation?.level || "Not checked")}</div>
         <div class="completion-track" aria-label="Plan completion"><span style="width:${summary.completionRate}%"></span></div>
         <article class="weekly-review ${review.tone}"><div><span>ATHLOS WEEKLY REVIEW</span><h3>${weeklyTitle(review.tone)}</h3><p>${escapeHtml(review.message)}</p></div><dl><div><dt>Sessions</dt><dd>${review.sessions}</dd></div><div><dt>Average RPE</dt><dd>${review.averageRpe}</dd></div><div><dt>Adjusted days</dt><dd>${review.reducedDays}</dd></div></dl></article>
+        <article class="monthly-report"><div><span>MONTHLY REPORT</span><h3>${escapeHtml(report.title)}</h3><p>${escapeHtml(report.message)}</p></div><dl><div><dt>Sessions</dt><dd>${report.sessions}</dd></div><div><dt>Training time</dt><dd>${report.minutes} min</dd></div><div><dt>Distance</dt><dd>${report.distance} km</dd></div><div><dt>Current streak</dt><dd>${report.streak} weeks</dd></div></dl><button class="secondary-button" data-print-report type="button">Print report</button></article>
         <div class="insight-grid">
             ${trendCard("Training load", "Last four weeks", loadSeries(getWorkoutLogs()), "load", "Session effort × duration")}
             ${trendCard("Effort trend", "Last eight sessions", effortSeries(getWorkoutLogs()), "effort", "How hard training felt")}
@@ -26,7 +28,11 @@ export function renderProgress(container, plan) {
     </section>`);
     const chart=container.querySelector(".training-chart"),sport=container.querySelector("[data-chart-sport]"),range=container.querySelector("[data-chart-range]");
     const draw=()=>renderChart(chart,getWorkoutLogs(),sport.value,Number(range.value));sport.addEventListener("change",draw);range.addEventListener("change",draw);draw();
+    container.querySelector("[data-print-report]")?.addEventListener("click",()=>window.print());
 }
+export function monthlyReport(logs, plannedPerWeek=0, now=new Date()) { const cutoff=now.getTime()-28*86400000,completed=logs.filter(log=>log.status==="completed"&&new Date(log.completedAt).getTime()>=cutoff),minutes=completed.reduce((sum,log)=>sum+Number(log.durationMinutes||45),0),distance=completed.reduce((sum,log)=>sum+Number(log.distanceKm||0),0),weeks=new Set(completed.map(log=>weekKey(new Date(log.completedAt)))),streak=weeklyStreak(completed,now),target=Math.max(1,plannedPerWeek*4),rate=Math.min(100,Math.round(completed.length/target*100));return{sessions:completed.length,minutes,distance:distance.toFixed(1),streak,rate,title:rate>=80?"A consistent month":rate>=50?"Momentum is building":"Build the repeatable habit",message:completed.length?`${rate}% of the four-week session target completed across ${weeks.size} active weeks. Keep the next increase small and sustainable.`:"Complete your first session to establish a training baseline."}; }
+function weekKey(date){const copy=new Date(date);copy.setHours(0,0,0,0);copy.setDate(copy.getDate()-((copy.getDay()+6)%7));return copy.toISOString().slice(0,10);}
+function weeklyStreak(logs,now){const active=new Set(logs.map(log=>weekKey(new Date(log.completedAt)))),cursor=new Date(now);let streak=0;for(let index=0;index<52;index++){const key=weekKey(cursor);if(!active.has(key))break;streak++;cursor.setDate(cursor.getDate()-7);}return streak;}
 function weeklyTitle(tone) { return tone === "manage" ? "Absorb the work" : tone === "progress" ? "Momentum is building" : "Build the rhythm"; }
 function loadSeries(logs) {
     const now = new Date();
