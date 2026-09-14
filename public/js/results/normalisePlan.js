@@ -23,6 +23,7 @@ export function normalisePlan(rawPlan) {
     const metadata = {
         programName: firstValue(
             raw.program_name,
+            raw.metadata?.programName,
             raw.dashboard?.title,
             raw.program_overview?.name,
             raw.program_overview?.program_name,
@@ -30,19 +31,22 @@ export function normalisePlan(rawPlan) {
         ),
         duration: firstValue(
             raw.program_duration,
+            raw.metadata?.duration,
             weeksLabel(raw.program_overview?.duration_weeks),
             raw.program_overview?.duration,
             "-"
         ),
         trainingDays: firstValue(
             raw.training_days,
+            raw.metadata?.trainingDays,
             raw.program_overview?.weekly_training_days,
             raw.available_days?.length,
-            workouts.length,
+            new Set(workouts.map(workout => workout.day)).size,
             0
         ),
         sessionLength: firstValue(
             raw.session_length,
+            raw.metadata?.sessionLength,
             raw.program_overview?.session_duration,
             "-"
         )
@@ -110,8 +114,9 @@ export function normalisePlan(rawPlan) {
     );
 
     return {
+        ...raw,
         metadata,
-        athlete: isPlainObject(raw.athlete_summary) ? raw.athlete_summary : {},
+        athlete: isPlainObject(raw.athlete_summary) ? raw.athlete_summary : (raw.athlete || {}),
         workouts,
         calendar: workouts.map(workout => ({ day: workout.day, workout })),
         exercises,
@@ -159,6 +164,8 @@ function normaliseWorkout(session, index) {
 
     if (typeof session === "string") {
         return {
+            id: `session-${index + 1}`,
+            time_of_day: "Any time",
             day: `Session ${index + 1}`,
             name: session,
             type: "Training",
@@ -176,6 +183,8 @@ function normaliseWorkout(session, index) {
     }
 
     return {
+        id: firstValue(session.id, session.session_id, `session-${index + 1}`),
+        time_of_day: normaliseSessionTime(firstValue(session.time_of_day, session.timeOfDay, session.time_slot, session.day, "")),
         day: firstValue(session.day, session.training_day, session.weekday, `Session ${index + 1}`),
         name: firstValue(session.session_name, session.name, session.title, session.session, "Training Session"),
         type: firstValue(session.type, session.session_type, session.focus, "Training"),
@@ -192,6 +201,14 @@ function normaliseWorkout(session, index) {
         ),
         progression: firstValue(session.progression, session.readiness_check, session.recovery_version, "")
     };
+}
+
+function normaliseSessionTime(value) {
+    const text = String(value).toLowerCase();
+    if (/morning|\bam\b/.test(text)) return "Morning";
+    if (/afternoon/.test(text)) return "Afternoon";
+    if (/evening|night|\bpm\b/.test(text)) return "Evening";
+    return "Any time";
 }
 
 function extractExercises(session) {

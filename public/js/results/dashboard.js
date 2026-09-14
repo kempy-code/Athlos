@@ -308,6 +308,8 @@ function initialiseTabs(dashboard){
                     target.classList.add(
                         "active"
                     );
+                    dashboard.dataset.activePage = tab.dataset.tab;
+                    target.scrollIntoView({ block: "start", behavior: "instant" });
 
                 }
 

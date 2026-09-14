@@ -35,7 +35,7 @@ import {
 
 } from "./state.js";
 
-import { hydrateAppData, loadPlan, savePlan } from "./appStore.js";
+import { getAppData, hydrateAppData, loadPlan, savePlan } from "./appStore.js";
 import { getCurrentUser, renderAuth } from "./authClient.js";
 import { isStaticHosting } from "./api.js";
 import { demoPlan } from "./demoPlan.js";
@@ -190,6 +190,11 @@ let currentAnswer = null;
 async function start(){
 
     loadState();
+    if (new URLSearchParams(window.location.search).get("demo") === "1" && getAppData().demoMode && loadPlan()) {
+        document.body.classList.remove("public-site");
+        loadDashboard(loadPlan());
+        return;
+    }
     const staticMode = isStaticHosting();
     if (staticMode) {
         const onboarding = new URLSearchParams(window.location.search).get("onboarding") === "1";
@@ -904,9 +909,12 @@ function showProgram(plan){
 // =====================================
 
 window.addEventListener("athlos:open-demo", () => {
-    seedDemoData(demoPlan);
+    if (!getAppData().demoMode || !loadPlan()) seedDemoData(demoPlan);
+    const url = new URL(window.location.href);
+    url.searchParams.set("demo", "1");
+    history.replaceState(null, "", url);
     document.body.classList.remove("public-site");
-    showProgram(demoPlan);
+    showProgram(loadPlan());
 });
 
 if ("serviceWorker" in navigator) {

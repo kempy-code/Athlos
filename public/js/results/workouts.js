@@ -59,7 +59,7 @@ function createWorkoutCard(workout, index) {
     return `
         <article class="workout-card">
             <div class="workout-header">
-                <span class="workout-number">${escapeHtml(day)}</span>
+                <span class="workout-number">${escapeHtml(day)} · ${escapeHtml(session.time_of_day || "Any time")}</span>
                 <h3>${escapeHtml(name)}</h3>
                 <span class="workout-type">${escapeHtml(type)}</span>
             </div>

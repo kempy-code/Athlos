@@ -15,9 +15,9 @@ export function getAppData() {
     }
 }
 
-function persist(next) {
+function persist(next, sync = true) {
     localStorage.setItem(STORE_KEY, JSON.stringify(next));
-    if (!isStaticHosting()) fetch("/api/user-data", { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({data:next}) }).catch(() => {});
+    if (sync && !isStaticHosting()) fetch("/api/user-data", { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({data:next}) }).catch(() => {});
     return next;
 }
 
@@ -112,9 +112,9 @@ export async function hydrateAppData() {
     return getAppData();
 }
 
-export function savePlan(plan) {
+export function savePlan(plan, { sync = true } = {}) {
     const data = getAppData();
-    return persist({ ...data, currentPlan: plan, planSavedAt: new Date().toISOString() });
+    return persist({ ...data, currentPlan: plan, planSavedAt: new Date().toISOString() }, sync);
 }
 
 export function loadPlan() { return getAppData().currentPlan; }

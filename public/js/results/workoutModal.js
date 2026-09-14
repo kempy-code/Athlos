@@ -12,7 +12,7 @@ export function openWorkoutModal(workout, onSaved = () => {}) {
     modal.setAttribute("aria-label", `${workout.name} workout`);
     modal.innerHTML = `<div class="workout-modal-panel">
         <button class="modal-close" type="button" aria-label="Close workout">×</button>
-        <div class="modal-heading"><span>${escapeHtml(workout.day)}</span><h2>${escapeHtml(workout.name)}</h2><p>Check your readiness, complete each exercise, then save the session.</p></div>
+        <div class="modal-heading"><span>${escapeHtml(workout.day)} · ${escapeHtml(workout.time_of_day || "Any time")}</span><h2>${escapeHtml(workout.name)}</h2><p>Check your readiness, complete each exercise, then save the session.</p></div>
         <div class="live-timer" aria-live="polite"><div><span>SESSION TIME</span><strong id="session-clock">00:00</strong></div><div class="timer-actions"><button type="button" data-timer="toggle">Start</button><button type="button" data-timer="rest">Rest 60s</button><button type="button" data-timer="reset">Reset</button></div><p id="rest-status"></p></div>
         ${renderMuscleMap(workout)}
         <form id="workout-log-form">
@@ -35,6 +35,7 @@ export function openWorkoutModal(workout, onSaved = () => {}) {
     let restSeconds = 0;
     const clock = modal.querySelector("#session-clock");
     const restStatus = modal.querySelector("#rest-status");
+    const updateWorkoutSummary = () => { updateSetSummary(modal); renderTime(); };
     const renderTime = () => { clock.textContent = `${String(Math.floor(elapsedSeconds / 60)).padStart(2,"0")}:${String(elapsedSeconds % 60).padStart(2,"0")}`; restStatus.textContent = restSeconds ? `Rest: ${restSeconds}s` : (restStatus.dataset.summary||""); };
     const stopTimer = () => { clearInterval(timerId); timerId = null; modal.querySelector('[data-timer="toggle"]').textContent = "Start"; };
     const startTimer = () => { if (timerId) return; modal.querySelector('[data-timer="toggle"]').textContent = "Pause"; timerId = setInterval(() => { elapsedSeconds += 1; if (restSeconds > 0) restSeconds -= 1; renderTime(); }, 1000); };
@@ -80,7 +81,7 @@ export function openWorkoutModal(workout, onSaved = () => {}) {
             load: row.querySelector(".set-row:last-child [name='setWeight']")?.value||""
         }));
         saveReadiness({ energy: Number(values.energy), sleep: Number(values.sleep), soreness: Number(values.soreness), stress: Number(values.stress), pain: Number(values.pain), recommendation });
-        saveWorkoutLog({ workoutName: workout.name, workoutDay: workout.day, status, completedExercises, totalExercises: workout.exercises.length, exerciseDetails, durationMinutes: Math.max(1, Math.round(elapsedSeconds / 60)), rpe: Number(values.rpe), notes: values.notes || "", recommendation });
+        saveWorkoutLog({ workoutId: workout.id, time_of_day: workout.time_of_day, workoutName: workout.name, workoutDay: workout.day, status, completedExercises, totalExercises: workout.exercises.length, exerciseDetails, durationMinutes: Math.max(1, Math.round(elapsedSeconds / 60)), rpe: Number(values.rpe), notes: values.notes || "", recommendation });
         close();
         onSaved();
     };
@@ -112,7 +113,12 @@ export function createInitialSets(exercise,previous) { const count=Math.max(1,Ma
 function previousSet(previous,index){if(Array.isArray(previous?.sets))return previous.sets[index]||null;if(!previous)return null;return index<Number(previous.actualSets||0)?{weight:previous.load,reps:previous.actualReps,type:"working"}:null;}
 function createSetRow(index,set,previous){const prior=previous?[previous.weight,previous.reps].filter(value=>value!==""&&value!=null).join(" × "):"—";return `<div class="set-row"><label><span class="sr-only">Set ${index+1} type</span><select name="setType" aria-label="Set ${index+1} type"><option value="working" ${set.type==="working"?"selected":""}>${index+1}</option><option value="warmup" ${set.type==="warmup"?"selected":""}>W</option><option value="drop" ${set.type==="drop"?"selected":""}>D</option><option value="failure" ${set.type==="failure"?"selected":""}>F</option></select></label><span class="previous-set">${escapeHtml(prior)}</span><label><span class="sr-only">Set ${index+1} weight</span><input name="setWeight" inputmode="decimal" value="${escapeHtml(set.weight)}" placeholder="0"></label><label><span class="sr-only">Set ${index+1} repetitions</span><input name="setReps" inputmode="numeric" value="${escapeHtml(set.reps)}" placeholder="0"></label><label><span class="sr-only">Set ${index+1} RPE</span><input name="setRpe" inputmode="decimal" value="${escapeHtml(set.rpe)}" placeholder="—"></label><label class="set-complete"><input data-set-complete type="checkbox" aria-label="Complete set ${index+1}" ${set.completed?"checked":""}><i>✓</i></label><button data-remove-set type="button" aria-label="Remove set ${index+1}">×</button></div>`;}
 function parseRest(value){const number=parseInt(value);return Number.isFinite(number)?Math.max(15,Math.min(600,number)):60;}
-function updateWorkoutSummary(modal){const rows=[...modal.querySelectorAll(".set-row")],complete=rows.filter(row=>row.querySelector('[data-set-complete]')?.checked),volume=complete.reduce((sum,row)=>sum+(Number(row.querySelector('[name="setWeight"]')?.value)||0)*(Number(row.querySelector('[name="setReps"]')?.value)||0),0);modal.querySelector("#rest-status").dataset.summary=`${complete.length}/${rows.length} sets · ${Math.round(volume).toLocaleString()} kg volume`;if(!restSeconds)modal.querySelector("#rest-status").textContent=modal.querySelector("#rest-status").dataset.summary;}
+function updateSetSummary(modal) {
+    const rows = [...modal.querySelectorAll(".set-row")];
+    const complete = rows.filter(row => row.querySelector("[data-set-complete]")?.checked);
+    const volume = complete.reduce((sum, row) => sum + (Number(row.querySelector('[name="setWeight"]')?.value) || 0) * (Number(row.querySelector('[name="setReps"]')?.value) || 0), 0);
+    modal.querySelector("#rest-status").dataset.summary = `${complete.length}/${rows.length} sets · ${Math.round(volume).toLocaleString()} kg volume`;
+}
 function substituteExercise(name) {
     const text = String(name).toLowerCase();
     const rules = [

@@ -46,8 +46,7 @@ export function loadDashboard(rawPlan) {
     container.replaceChildren(dashboard);
 
     const getTab = id => dashboard.querySelector(`#${id}`);
-    const completedNames = new Set(getWorkoutLogs().filter(log => log.status === "completed").map(log => log.workoutName));
-    const nextWorkout = plan.workouts.find(workout => !completedNames.has(workout.name)) || plan.workouts[0];
+    const nextWorkout = nextScheduledWorkout(plan.workouts, getWorkoutLogs());
     const title = dashboard.querySelector("#next-workout-name");
     const day = dashboard.querySelector("#next-workout-day");
     const stats = dashboard.querySelector("#dashboard-stats");
@@ -57,7 +56,7 @@ export function loadDashboard(rawPlan) {
     }
 
     if (day) {
-        day.textContent = nextWorkout?.day || nextWorkout?.type || "Workout";
+        day.textContent = nextWorkout ? `${nextWorkout.day} · ${nextWorkout.time_of_day || "Any time"}` : "Workout";
     }
 
     if (stats) {
@@ -106,9 +105,11 @@ export function loadDashboard(rawPlan) {
 
     if (calendar) {
         renderCalendar(calendar, plan.workouts, movedWorkouts => {
-            const updated = { ...plan, workouts: movedWorkouts };
+            const trainingDays = new Set(movedWorkouts.map(workout => workout.day)).size;
+            const updated = { ...rawPlan, workouts: movedWorkouts, training_days: trainingDays };
             savePlan(updated);
             loadDashboard(updated);
+            document.querySelector('[data-tab="calendar"]')?.click();
         });
     }
 
@@ -139,7 +140,11 @@ export function loadDashboard(rawPlan) {
     if(activity)renderActivityHistory(activity, () => loadDashboard(rawPlan));
 
     const coach=getTab("coach-tab");
-    if(coach)renderCoach(coach, { demoMode, onPlanChanged: updated => { savePlan(updated); loadDashboard(updated); } });
+    if(coach)renderCoach(coach, { demoMode, onPlanChanged: updated => {
+        savePlan(updated, { sync: false });
+        loadDashboard(updated);
+        document.querySelector('[data-tab="coach"]')?.click();
+    } });
     const toolkit=getTab("toolkit-tab");
     if(toolkit)renderToolkit(toolkit, plan, () => loadDashboard(rawPlan));
     const account=getTab("account-tab");
@@ -175,6 +180,21 @@ function initialiseExperience(accountBar,demoMode){
     accountBar.querySelector("[data-theme-toggle]").addEventListener("click",()=>apply(root.dataset.theme==="dark"?"light":"dark"));
     const install=accountBar.querySelector("[data-install-app]");install.hidden=!installPrompt;install.addEventListener("click",async()=>{if(!installPrompt)return;await installPrompt.prompt();installPrompt=null;install.hidden=true;});
     const status=accountBar.querySelector("[data-connection-status]"),update=()=>{status.textContent=!navigator.onLine?"Offline · changes stay on this device":demoMode?"Demo athlete · Sample training data":"Online · account sync active";};update();window.addEventListener("online",update,{once:true});window.addEventListener("offline",update,{once:true});
+}
+
+export function nextScheduledWorkout(workouts, logs, now = new Date()) {
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const weekday = value => days.findIndex(day => String(value).toLowerCase().includes(day.toLowerCase()));
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (now.getDay() + 6) % 7);
+    monday.setHours(0, 0, 0, 0);
+    const completed = logs.filter(log => log.status === "completed" && new Date(log.completedAt) >= monday && new Date(log.completedAt) <= now);
+    const pending = workouts.filter(workout => !completed.some(log => log.workoutId ? log.workoutId === workout.id : log.workoutName === workout.name && weekday(log.workoutDay) === weekday(workout.day)));
+    const order = { Morning: 0, Afternoon: 1, Evening: 2, "Any time": 3 };
+    return [...(pending.length ? pending : workouts)].sort((a, b) => {
+        const offset = workout => weekday(workout.day) < 0 ? 7 : (weekday(workout.day) - now.getDay() + 7) % 7;
+        return offset(a) - offset(b) || (order[a.time_of_day] ?? 3) - (order[b.time_of_day] ?? 3);
+    })[0];
 }
 
 export function dailyRecommendation(data = getAppData(), load = getTrainingLoad()) {

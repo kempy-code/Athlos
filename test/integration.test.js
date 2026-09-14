@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { planRevision } from "../coachPlan.js";
 
 const port=32000+Math.floor(Math.random()*1000);
 const base=`http://127.0.0.1:${port}`;
@@ -43,3 +44,22 @@ test("password reset tokens are one-time and expire safely",async()=>{
 });
 
 test("security headers are present",async()=>{const response=await fetch(`${base}/`);assert.equal(response.headers.get("x-frame-options"),"DENY");assert.match(response.headers.get("content-security-policy"),/default-src 'self'/);});
+
+test("coach applies double days, persists them and rejects stale previews", async () => {
+    const registered = await fetch(`${base}/api/auth/register`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "Plan Test", email: `plan-${Date.now()}@example.com`, password: "test-only-password-123" }) });
+    const headers = { "Content-Type": "application/json", cookie: registered.headers.get("set-cookie").split(";")[0] };
+    const plan = { workouts: [{ day: "Wednesday", name: "Gym", exercises: [{ name: "Squat", sets: "3" }] }] };
+    await fetch(`${base}/api/user-data`, { method: "PUT", headers, body: JSON.stringify({ data: { version: 1, currentPlan: plan } }) });
+    const changes = [{ action: "add", workout_index: null, day: "Wednesday", time_of_day: "Morning", name: "Easy run", type: "Running", purpose: "Aerobic", duration: "30 min", warmup: ["Walk"], cooldown: ["Walk"], exercises: [{ name: "Run", sets: "1", reps: "20 min", rest: "None", coaching_notes: "Easy" }] }];
+    const payload = JSON.stringify({ changes, baseRevision: planRevision(plan) });
+    const applied = await fetch(`${base}/api/coach/apply`, { method: "POST", headers, body: payload });
+    assert.equal(applied.status, 200);
+    const stored = (await (await fetch(`${base}/api/user-data`, { headers })).json()).data.currentPlan;
+    assert.deepEqual(stored.workouts[0], { ...plan.workouts[0], id: "session-1" });
+    assert.equal(stored.workouts[1].time_of_day, "Morning");
+    assert.equal(stored.workouts.length, 2);
+    const stale = await fetch(`${base}/api/coach/apply`, { method: "POST", headers, body: payload });
+    assert.equal(stale.status, 409);
+    const denied = await fetch(`${base}/api/coach/apply`, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload });
+    assert.equal(denied.status, 401);
+});

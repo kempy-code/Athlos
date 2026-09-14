@@ -8,6 +8,7 @@ import dotenv from "dotenv";
 import OpenAI from "openai";
 import path from "path";
 import crypto from "node:crypto";
+import { applyCoachPlanChanges, coachPlanChangeSchema, COACH_EDIT_INSTRUCTIONS, planRevision } from "./coachPlan.js";
 import { fileURLToPath } from "url";
 import { addCoachComment, addCoachMessage, assignAthlete, clearCoachMessages, coachCanAccess, consumeAccountToken, createUser, deleteAllUserSessions, deleteUser, getCoachAthletes, getCoachComments, getCoachMessages, getUserByEmail, getUserData, getUserWithPassword, saveAccountToken, saveUserData, setUserRole, updatePassword, verifyUserEmail } from "./db.js";
 import { hashPassword, issueSession, optionalAuth, requireAuth, revokeSession, validateCredentials, verifyPassword } from "./auth.js";
@@ -120,6 +121,7 @@ RULES:
 - Include specific exercises.
 - Include sets, reps, rest and coaching notes.
 - Make workouts practical.
+- Represent each session separately, including multiple workouts on the same day when requested. Use time_of_day for Morning, Afternoon, Evening or Any time. Count training_days as distinct days, not the number of sessions.
 
 
 Return a complete plan matching the supplied JSON schema. Use plain strings for
@@ -298,7 +300,21 @@ app.get("/api/coach/comments",requireAuth,(req,res)=>res.json({comments:getCoach
 app.get("/api/coach/messages",requireAuth,(req,res)=>res.json({messages:getCoachMessages(req.user.id,30)}));
 app.delete("/api/coach/messages",requireAuth,(req,res)=>{clearCoachMessages(req.user.id);res.json({success:true});});
 
-const coachPlanChangeSchema={type:"object",additionalProperties:false,required:["summary","changes"],properties:{summary:{type:"string"},changes:{type:"array",minItems:1,maxItems:7,items:{type:"object",additionalProperties:false,required:["workout_index","new_day","new_name","purpose_append","volume_multiplier"],properties:{workout_index:{type:"integer",minimum:0},new_day:{type:"string"},new_name:{type:"string"},purpose_append:{type:"string"},volume_multiplier:{type:"number",minimum:.5,maximum:1.25}}}}}};
+app.post("/api/coach/apply", requireAuth, (req, res) => {
+    const data = getUserData(req.user.id);
+    if (!req.body?.baseRevision || req.body.baseRevision !== planRevision(data.currentPlan)) {
+        return res.status(409).json({ error: "Your plan changed since this preview. Ask the coach for an updated proposal." });
+    }
+    try {
+        if (!req.body.changes?.length) return res.status(400).json({ error: "There are no changes to apply" });
+        const plan = applyCoachPlanChanges(data.currentPlan, req.body.changes);
+        saveUserData(req.user.id, { ...data, currentPlan: plan, planSavedAt: new Date().toISOString() });
+        addCoachMessage(req.user.id, "assistant", "Plan changes applied and saved. Your schedule and workouts are now updated.");
+        res.json({ plan });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
 
 app.post("/api/coach",requireAuth,generationRateLimit,async(req,res)=>{
     try {
@@ -308,20 +324,32 @@ app.post("/api/coach",requireAuth,generationRateLimit,async(req,res)=>{
         const data=getUserData(req.user.id);
         if(req.body?.modifyPlan){
             if(!data.currentPlan?.workouts?.length)return res.status(400).json({error:"Create a training plan before asking the coach to modify it"});
-            const proposal=await openai.responses.create({model:OPENAI_MODEL,input:[{role:"system",content:"You safely adjust an athlete training plan. Return only the requested structured changes. Preserve the goal of each session, avoid large load jumps, never prescribe through pain, and use an empty string for any field that should remain unchanged."},{role:"user",content:`Requested change: ${message}\nCurrent workouts: ${JSON.stringify(data.currentPlan.workouts.map((workout,index)=>({index,day:workout.day,name:workout.name||workout.session_name,type:workout.type,purpose:workout.purpose,exerciseCount:(workout.exercises||workout.main_workout||[]).length})))}`}],text:{format:{type:"json_schema",name:"athlos_plan_changes",strict:true,schema:coachPlanChangeSchema}},max_output_tokens:700});
-            const parsed=JSON.parse(proposal.output_text),plan=applyCoachPlanChanges(data.currentPlan,parsed.changes);
-            addCoachMessage(req.user.id,"user",message);addCoachMessage(req.user.id,"assistant",parsed.summary);
-            return res.json({message:parsed.summary,plan,changes:parsed.changes});
+            const history = getCoachMessages(req.user.id, 12).map(({ role, content }) => ({ role, content }));
+            const proposal = await openai.responses.create({
+                model: OPENAI_MODEL,
+                instructions: `${COACH_EDIT_INSTRUCTIONS}\nAthlete context: ${JSON.stringify({ profile: data.profile || {}, workouts: data.currentPlan.workouts.map((workout, index) => ({ ...workout, workout_index: index })), recentLogs: (data.workoutLogs || []).slice(-5), readiness: (data.readiness || []).slice(-3) })}`,
+                input: [...history, { role: "user", content: message }],
+                text: { format: { type: "json_schema", name: "athlos_plan_changes", strict: true, schema: coachPlanChangeSchema } },
+                max_output_tokens: 5000
+            });
+            if (proposal.status === "incomplete" || !proposal.output_text || proposal.output?.some(item => item.content?.some(part => part.type === "refusal"))) {
+                return res.status(422).json({ error: "The coach could not finish this proposal. Try one change at a time. Your plan has not changed." });
+            }
+            const parsed = JSON.parse(proposal.output_text);
+            const plan = parsed.changes.length ? applyCoachPlanChanges(data.currentPlan, parsed.changes) : null;
+            const reply = parsed.changes.length ? `Proposed changes — review before applying.\n\n${parsed.summary}` : parsed.summary;
+            addCoachMessage(req.user.id, "user", message);
+            addCoachMessage(req.user.id, "assistant", reply);
+            return res.json({ message: reply, plan, changes: parsed.changes, baseRevision: planRevision(data.currentPlan) });
         }
         const history=getCoachMessages(req.user.id,10).map(({role,content})=>({role,content}));
-        const response=await openai.responses.create({model:OPENAI_MODEL,instructions:`You are Athlos Coach, a concise, encouraging training assistant. Use the athlete's stored plan and logs. Never diagnose injuries or replace medical care. If pain, serious symptoms, eating disorders, or unsafe training are mentioned, recommend stopping and consulting an appropriate qualified professional. Do not invent completed workouts or measurements. Give practical next actions and explain plan adjustments. Athlete context: ${JSON.stringify({profile:data.profile||{},plan:data.currentPlan||null,recentLogs:(data.workoutLogs||[]).slice(-5),readiness:(data.readiness||[]).slice(-3)})}`,input:[...history,{role:"user",content:message}],max_output_tokens:500});
+        const response=await openai.responses.create({model:OPENAI_MODEL,instructions:`You are Athlos Coach, a concise, encouraging training assistant. Use the athlete's stored plan and logs. Never diagnose injuries or replace medical care. If pain, serious symptoms, eating disorders, or unsafe training are mentioned, recommend stopping and consulting an appropriate qualified professional. Do not invent completed workouts or measurements. This is advice-only mode. You cannot save or modify the plan in this mode. Never claim that you changed it; direct requests for edits to Plan & coaching mode. Give practical next actions. Athlete context: ${JSON.stringify({profile:data.profile||{},plan:data.currentPlan||null,recentLogs:(data.workoutLogs||[]).slice(-5),readiness:(data.readiness||[]).slice(-3)})}`,input:[...history,{role:"user",content:message}],max_output_tokens:500});
         const answer=response.output_text?.trim()||"I couldn’t create a coaching response. Please try again.";
         addCoachMessage(req.user.id,"user",message);addCoachMessage(req.user.id,"assistant",answer);
         res.json({message:answer});
     } catch(error){console.error("Coach error",error);res.status(500).json({error:"The AI Coach is temporarily unavailable"});}
 });
 
-function applyCoachPlanChanges(plan,changes){const workouts=plan.workouts.map((workout,index)=>{const change=changes.find(item=>item.workout_index===index);if(!change)return workout;const exercises=workout.exercises||workout.main_workout||[],keep=Math.max(1,Math.ceil(exercises.length*change.volume_multiplier)),next={...workout};if(change.new_day)next.day=change.new_day;if(change.new_name){next.name=change.new_name;if("session_name" in next)next.session_name=change.new_name;}if(change.purpose_append)next.purpose=`${workout.purpose||""} ${change.purpose_append}`.trim();if(Array.isArray(workout.exercises))next.exercises=exercises.slice(0,keep);if(Array.isArray(workout.main_workout))next.main_workout=exercises.slice(0,keep);return next;});return{...plan,workouts,coachModification:{createdAt:new Date().toISOString(),changes}};}
 
 
 
@@ -363,9 +391,10 @@ const planSchema = {
             type: "array", minItems: 1,
             items: {
                 type: "object", additionalProperties: false,
-                required: ["day", "session_name", "type", "purpose", "target_duration_minutes", "warm_up", "main_workout", "cool_down"],
+                required: ["day", "time_of_day", "session_name", "type", "purpose", "target_duration_minutes", "warm_up", "main_workout", "cool_down"],
                 properties: {
                     day: { type: "string" }, session_name: { type: "string" }, type: { type: "string" },
+                    time_of_day: { type: "string", enum: ["Morning", "Afternoon", "Evening", "Any time"] },
                     purpose: { type: "string" }, target_duration_minutes: { type: "integer" },
                     warm_up: stringArray, main_workout: { type: "array", items: exerciseSchema }, cool_down: stringArray
                 }

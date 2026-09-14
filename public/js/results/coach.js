@@ -1,17 +1,113 @@
+import { loadPlan } from "../appStore.js";
+import { normalisePlan } from "./normalisePlan.js";
+
 export async function renderCoach(container, { demoMode = false, onPlanChanged = () => {} } = {}) {
-    if(!container)return;
-    container.innerHTML=`<section class="dashboard-section coach-section"><div class="section-header"><h2>AI Coach</h2><p>Ask about your plan, recovery, progression, or your next workout.</p></div><div class="coach-prompts" aria-label="Suggested questions"><button type="button">Adjust today’s workout</button><button type="button">Why am I doing this session?</button><button type="button">Review my week</button><button type="button">Am I progressing toward my goal?</button></div><button class="coach-plan-button" data-edit-plan type="button">✦ Ask Coach to modify my plan</button><div id="coach-messages" class="coach-messages" aria-live="polite"><p class="coach-empty">Start a conversation with your Athlos Coach.</p></div><form id="coach-form" class="coach-form"><label for="coach-input">Message your coach</label><div><textarea id="coach-input" name="message" rows="2" maxlength="2000" placeholder="How should I approach today’s workout?" required></textarea><button class="primary-button" type="submit">Send</button></div><small class="coach-mode" role="status"></small></form><button id="clear-coach" class="text-button" type="button">Clear conversation</button><p class="coach-disclaimer">Athlos Coach provides general training guidance and shows plan changes before applying them.</p></section>`;
-    const list=container.querySelector("#coach-messages");
-    const show=messages=>{list.innerHTML=messages.length?messages.map(item=>`<article class="coach-message ${item.role}"><span>${item.role==="user"?"You":"Athlos Coach"}</span><p>${escapeHtml(item.content).replaceAll("\n","<br>")}</p></article>`).join(""):`<p class="coach-empty">Start a conversation with your Athlos Coach.</p>`;list.scrollTop=list.scrollHeight;};
-    if(demoMode)show([{role:"assistant",content:"Welcome to the Athlos demo. Ask me about today’s session, recovery, missed training, or how to adjust the plan."}]);
-    else try{const response=await fetch("/api/coach/messages");if(response.ok)show((await response.json()).messages||[]);}catch{}
-    container.querySelector("#coach-form").addEventListener("submit",async event=>{
-        event.preventDefault();const input=container.querySelector("#coach-input");const message=input.value.trim();if(!message)return;const current=[...list.querySelectorAll(".coach-message")].map(node=>({role:node.classList.contains("user")?"user":"assistant",content:node.querySelector("p").textContent}));show([...current,{role:"user",content:message}]);input.value="";const button=event.currentTarget.querySelector("button");button.disabled=true;button.textContent="Thinking…";
-        try{let reply,plan=null;if(demoMode){await new Promise(resolve=>setTimeout(resolve,450));reply=demoReply(message);if(event.currentTarget.dataset.mode==="plan")reply+=" Create an account to apply AI plan changes.";}else{const response=await fetch("/api/coach",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message,modifyPlan:event.currentTarget.dataset.mode==="plan"})});const data=await response.json();if(!response.ok)throw new Error(data.error);reply=data.message;plan=data.plan;}show([...current,{role:"user",content:message},{role:"assistant",content:reply}]);if(plan&&window.confirm(`Athlos Coach proposes:\n\n${reply}\n\nApply these changes to your training plan?`))onPlanChanged(plan);}catch(error){show([...current,{role:"user",content:message},{role:"assistant",content:error.message||"Coach is unavailable."}]);}finally{button.disabled=false;button.textContent="Send";event.currentTarget.dataset.mode="chat";container.querySelector(".coach-mode").textContent="";}
+    if (!container) return;
+    let messages = [], pending = null, busy = false;
+    container.innerHTML = `<section class="dashboard-section athlete-coach">
+        <header class="athlete-coach-header"><div class="section-header"><span class="coach-eyebrow">YOUR TRAINING PARTNER</span><h2>AI Coach</h2><p>Talk through your training or make a change to your week.</p></div><span class="coach-status">${demoMode ? "Demo conversation" : "Connected to your plan"}</span></header>
+        <div class="coach-mode-switch" aria-label="Coach mode"><button type="button" data-mode="plan" aria-pressed="true">Plan & coaching</button><button type="button" data-mode="chat" aria-pressed="false">Advice only</button></div>
+        <div class="coach-prompts"><button type="button">Add an easy Wednesday morning run</button><button type="button">Review my week</button><button type="button">Make my next session shorter</button></div>
+        <div id="coach-messages" class="coach-messages" role="log" aria-label="Coach conversation" aria-live="polite"></div>
+        <div class="coach-proposal" hidden></div>
+        <form id="coach-form" class="coach-form" data-mode="plan"><label for="coach-input">Message your coach</label><div><textarea id="coach-input" name="message" rows="2" maxlength="2000" placeholder="Add a morning run on Wednesday and keep my gym session…" required></textarea><button class="primary-button" type="submit">Send</button></div><small class="coach-mode">Plan changes appear as a preview for you to apply.</small></form>
+        <div class="coach-footer"><p>Training guidance informed by your plan and recent sessions.</p><button id="clear-coach" class="text-button" type="button">Clear conversation</button></div><p class="coach-feedback" role="status"></p>
+    </section>`;
+    const list = container.querySelector("#coach-messages"), form = container.querySelector("form");
+    const input = form.querySelector("textarea"), send = form.querySelector('button[type="submit"]');
+    const preview = container.querySelector(".coach-proposal"), feedback = container.querySelector(".coach-feedback");
+    function show() {
+        list.innerHTML = messages.length ? messages.map(item => `<article class="coach-message ${item.role === "user" ? "user" : "assistant"}"><span>${item.role === "user" ? "You" : "Athlos Coach"}</span><p>${formatMessage(item.content)}</p></article>`).join("") : '<div class="coach-empty"><span>✦</span><strong>What would make this week work better?</strong><p>Ask about a session, add a second workout to a day, or adjust your training around life.</p></div>';
+        list.scrollTop = list.scrollHeight;
+    }
+    function setBusy(value) {
+        busy = value; send.disabled = value; send.textContent = value ? "Thinking…" : "Send";
+        container.querySelector("#clear-coach").disabled = value;
+        container.querySelectorAll("[data-mode]").forEach(button => button.disabled = value);
+    }
+    function clearProposal() { pending = null; preview.hidden = true; preview.replaceChildren(); }
+    function proposal(data) {
+        pending = data;
+        const before = normalisePlan(loadPlan()).workouts, after = normalisePlan(data.plan).workouts;
+        let added = 0;
+        const changedExisting = data.changes.filter(change => change.action !== "add");
+        const removed = changedExisting.filter(change => change.action === "remove").map(change => change.workout_index);
+        const details = data.changes.map(change => {
+            const original = before[change.workout_index];
+            const current = change.action === "add" ? after[before.length - removed.length + added++]
+                : after[change.workout_index - removed.filter(index => index < change.workout_index).length];
+            const label = change.action === "add" ? "Add session" : change.action === "remove" ? "Remove session" : "Update session";
+            return `<li><span class="proposal-action">${label}</span><strong>${escapeHtml(change.action === "remove" ? original?.name : current?.name)}</strong>
+                ${original ? `<small>Was: ${escapeHtml(original.day)} · ${escapeHtml(original.time_of_day)} · ${escapeHtml(original.name)}</small>` : ""}
+                ${change.action !== "remove" ? `<p>${escapeHtml(current?.day)} · ${escapeHtml(current?.time_of_day)} · ${escapeHtml(current?.duration)}</p>${change.exercises ? `<details><summary>Review ${current?.exercises.length || 0} exercises</summary><ul>${(current?.exercises || []).map(ex => `<li>${escapeHtml(ex.name)} — ${escapeHtml(ex.sets)} × ${escapeHtml(ex.reps)}</li>`).join("")}</ul></details>` : ""}` : ""}</li>`;
+        }).join("");
+        preview.innerHTML = `<header><div><span class="coach-eyebrow">REVIEW CHANGES</span><h3>Your updated week</h3></div><small>${after.length} sessions</small></header><ul class="proposal-changes">${details}</ul><div class="proposal-actions"><button type="button" class="primary-button" data-apply>Apply changes</button><button type="button" class="secondary-button" data-discard>Discard</button></div><p class="proposal-feedback" role="status">Your current plan stays in place until you apply.</p>`;
+        preview.hidden = false;
+        preview.querySelector("[data-discard]").addEventListener("click", () => { clearProposal(); feedback.textContent = "Proposal discarded. Your plan has not changed."; });
+        preview.querySelector("[data-apply]").addEventListener("click", async () => {
+            const apply = preview.querySelector("[data-apply]"), discard = preview.querySelector("[data-discard]");
+            apply.disabled = discard.disabled = true; setBusy(true); apply.textContent = "Saving…";
+            try {
+                const saved = await request("/api/coach/apply", { method: "POST", body: JSON.stringify({ changes: pending.changes, baseRevision: pending.baseRevision }) });
+                clearProposal();
+                await onPlanChanged(saved.plan);
+            } catch (error) {
+                preview.querySelector(".proposal-feedback").textContent = error.message;
+                apply.disabled = discard.disabled = false; apply.textContent = "Apply changes";
+            } finally { setBusy(false); }
+        });
+    }
+    show();
+    if (demoMode) {
+        messages = [{ role: "assistant", content: "You’re exploring the demo coach. Live conversations and plan editing are available in the server-hosted Athlos app. Your demo schedule can still be rearranged in the calendar." }];
+        show();
+    } else {
+        setBusy(true);
+        try { messages = (await request("/api/coach/messages")).messages || []; show(); }
+        catch (error) { feedback.textContent = error.message; }
+        finally { setBusy(false); }
+    }
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+        const message = input.value.trim();
+        if (!message || busy) return;
+        clearProposal(); feedback.textContent = "";
+        messages.push({ role: "user", content: message }); show(); input.value = ""; setBusy(true);
+        try {
+            const data = demoMode ? { message: "This is a sample conversation. Open your server-hosted Athlos app to request personalised coaching or AI plan changes. You can move individual sessions and create double days in this demo’s calendar." }
+                : await request("/api/coach", { method: "POST", body: JSON.stringify({ message, modifyPlan: form.dataset.mode === "plan" }) });
+            messages.push({ role: "assistant", content: data.message }); show();
+            if (data.plan && data.changes?.length) proposal(data);
+        } catch (error) {
+            feedback.textContent = error.message;
+            input.value = message;
+        } finally { setBusy(false); }
     });
-    container.querySelectorAll(".coach-prompts button").forEach(button=>button.addEventListener("click",()=>{const input=container.querySelector("#coach-input");input.value=button.textContent;input.focus();}));
-    container.querySelector("[data-edit-plan]").addEventListener("click",()=>{const form=container.querySelector("#coach-form"),input=container.querySelector("#coach-input");form.dataset.mode="plan";container.querySelector(".coach-mode").textContent="Plan editing mode · describe what should change";input.placeholder="Move Friday’s hard session to Saturday and reduce its volume";input.focus();});
-    container.querySelector("#clear-coach").addEventListener("click",async()=>{if(!demoMode)await fetch("/api/coach/messages",{method:"DELETE"});show([]);});
+    container.querySelectorAll("[data-mode]").forEach(button => button.addEventListener("click", () => {
+        form.dataset.mode = button.dataset.mode;
+        container.querySelectorAll("[data-mode]").forEach(item => item.setAttribute("aria-pressed", String(item === button)));
+        form.querySelector(".coach-mode").textContent = button.dataset.mode === "plan" ? "Plan changes appear as a preview for you to apply." : "Advice only. Switch to Plan & coaching to request changes.";
+    }));
+    container.querySelectorAll(".coach-prompts button").forEach(button => button.addEventListener("click", () => {
+        input.value = button.textContent; input.focus();
+    }));
+    container.querySelector("#clear-coach").addEventListener("click", async () => {
+        if (busy) return;
+        setBusy(true);
+        try { if (!demoMode) await request("/api/coach/messages", { method: "DELETE" }); messages = []; clearProposal(); show(); feedback.textContent = ""; }
+        catch (error) { feedback.textContent = error.message; }
+        finally { setBusy(false); }
+    });
 }
-function demoReply(message){const text=message.toLowerCase();if(text.includes("30")||text.includes("time"))return "Keep the full warm-up, complete the first three quality exercises, then finish with five easy minutes. This preserves the session’s main goal in about 30 minutes.";if(text.includes("sore")||text.includes("pain")||text.includes("recovery"))return "Use today’s readiness check first. If pain changes your movement, stop that exercise. For general soreness, reduce volume by one set and keep effort below RPE 7.";if(text.includes("miss"))return "Do not stack two hard sessions together to catch up. Move the missed session to the next suitable day, or skip it if that would compromise recovery.";return "For the demo athlete, the priority is consistent quality: complete the planned session at controlled effort, log your RPE, and use tomorrow’s readiness check to guide progression.";}
-function escapeHtml(value){return String(value||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");}
+async function request(url, options = {}) {
+    const response = await fetch(url, { ...options, headers: { "Content-Type": "application/json" } });
+    const data = await response.json().catch(() => { throw new Error("The coach server returned an invalid response. Restart Athlos and try again."); });
+    if (!response.ok) throw new Error(data.error || "The coach is unavailable. Please try again.");
+    return data;
+}
+export function formatMessage(value) {
+    return escapeHtml(value).replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>").replaceAll("\n", "<br>");
+}
+function escapeHtml(value) {
+    return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+}
