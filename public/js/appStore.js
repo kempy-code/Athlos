@@ -3,7 +3,20 @@ import { isStaticHosting } from "./api.js";
 const STORE_KEY = "athlos_app_v1";
 
 function defaults() {
-    return { version: 1, currentPlan: null, planSavedAt: null, workoutLogs: [], readiness: [], goals: [], performanceTests: [], nutritionLogs: [], healthSamples: [], trainingBlocks: [], challenges: [], notificationPreferences: { workout: true, readiness: true, weekly: true } };
+    return { version: 1, currentPlan: null, planSavedAt: null, workoutLogs: [], readiness: [], goals: [], performanceTests: [], nutritionLogs: [], healthSamples: [], trainingBlocks: [], challenges: [], athleteLab: defaultAthleteLab(), notificationPreferences: { workout: true, readiness: true, weekly: true } };
+}
+
+function defaultAthleteLab() {
+    return {
+        athlete: { displayName: "", sport: "", motto: "" },
+        seasonPhase: "Build",
+        events: [],
+        recipes: [],
+        journal: [],
+        confidence: {},
+        atmosphere: "focus",
+        commentator: true
+    };
 }
 
 export function getAppData() {
@@ -23,6 +36,11 @@ function persist(next, sync = true) {
 
 export function updateAppData(changes) {
     return persist({ ...getAppData(), ...changes, version: 1 });
+}
+
+export function updateAthleteLab(changes) {
+    const data = getAppData();
+    return persist({ ...data, athleteLab: { ...defaultAthleteLab(), ...(data.athleteLab || {}), ...changes } });
 }
 
 function identified(entry, prefix) {
@@ -154,7 +172,18 @@ export function seedDemoData(plan, now = new Date()) {
             completed("Speed and Mechanics", 2, 8, 5, "Last interval was challenging."),
             completed("Mobility Reset", 0, 3, 4, "Hips feel much better.")
         ],
-        readiness
+        readiness,
+        athleteLab: {
+            ...defaultAthleteLab(),
+            athlete: { displayName: "Jordan", sport: "Hybrid athlete", motto: "Small wins, repeated." },
+            seasonPhase: "Build",
+            events: [{ id: "demo-event", name: "Spring 10K", date: new Date(now.getTime() + 42 * day).toISOString().slice(0, 10), type: "Race" }],
+            recipes: [{ id: "demo-recipe", name: "45-minute athletic strength", description: "Squat, push, pull, carry and core." }],
+            journal: [{ id: "demo-journal", createdAt: new Date(now.getTime() - 2 * day).toISOString(), text: "Intervals felt controlled. Keep the first rep patient." }],
+            confidence: { "Foundation Strength": 4, "Aerobic Development": 3 },
+            atmosphere: "focus",
+            commentator: true
+        }
     });
 }
 

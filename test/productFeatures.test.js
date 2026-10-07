@@ -7,6 +7,7 @@ import { muscleGroupsForWorkout } from "../public/js/results/muscleMap.js";
 import { buildIntervalWorkout } from "../public/js/results/toolkit.js";
 import { activitiesCsv } from "../public/js/results/activityHistory.js";
 import { monthlyReport } from "../public/js/results/progress.js";
+import { comparePeriods, createWeeklyStory, eventCountdown, muscleBalance, projectFuture } from "../public/js/results/athleteLab.js";
 
 test("daily recommendation responds to readiness and training load", () => {
     const ready = dailyRecommendation({ readiness: [] }, { ratio: 0.9 });
@@ -72,4 +73,23 @@ test("activity export safely quotes commas and monthly report summarises work", 
     const report=monthlyReport(logs,1,now);
     assert.equal(report.sessions,1);
     assert.equal(report.distance,"5.0");
+});
+
+test("athlete lab turns activity data into a useful weekly story and projection", () => {
+    const now = new Date();
+    const logs = [
+        { status:"completed", completedAt:new Date(now - 2 * 86400000).toISOString(), durationMinutes:45, rpe:6 },
+        { status:"completed", completedAt:new Date(now - 5 * 86400000).toISOString(), durationMinutes:60, rpe:7 }
+    ];
+    assert.match(createWeeklyStory(logs, []), /sessions/);
+    assert.equal(projectFuture(logs).weeklySessions, 0.5);
+    assert.equal(comparePeriods(logs, now).recent.sessions, 2);
+});
+
+test("athlete lab calculates event countdowns and planned muscle balance", () => {
+    const events = eventCountdown([{ name:"Race", date:"2030-01-10" }], new Date("2030-01-01"));
+    assert.equal(events[0].days, 9);
+    const balance = muscleBalance([{ exercises:[{ name:"Back squat", sets:3 }, { name:"Bench press", sets:2 }] }]);
+    assert.equal(balance.find(([name]) => name === "quads")[1], 3);
+    assert.equal(balance.find(([name]) => name === "chest")[1], 2);
 });

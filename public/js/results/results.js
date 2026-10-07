@@ -21,6 +21,7 @@ import { renderAccount } from "./account.js";
 import { renderToolkit } from "./toolkit.js";
 import { renderActivityHistory } from "./activityHistory.js";
 import { initialiseTutorial } from "./tutorial.js";
+import { renderAthleteLab } from "./athleteLab.js";
 
 let installPrompt = null;
 if (typeof window !== "undefined") window.addEventListener("beforeinstallprompt", event => { event.preventDefault(); installPrompt=event; });
@@ -145,6 +146,8 @@ export function loadDashboard(rawPlan) {
         loadDashboard(updated);
         document.querySelector('[data-tab="coach"]')?.click();
     } });
+    const lab=getTab("lab-tab");
+    if(lab)renderAthleteLab(lab, plan, () => loadDashboard(rawPlan));
     const toolkit=getTab("toolkit-tab");
     if(toolkit)renderToolkit(toolkit, plan, () => loadDashboard(rawPlan));
     const account=getTab("account-tab");
