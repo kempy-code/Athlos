@@ -11,7 +11,7 @@
     "audit": "node scripts/audit.js",
     "test:pages": "node scripts/pages-check.js",
     "backup": "node scripts/backup.js",
-    "start": "node server.js"
+    "start": "node scripts/startLocal.js"
   },
   "keywords": [],
   "author": "",
