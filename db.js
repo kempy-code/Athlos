@@ -4,9 +4,27 @@ import path from "node:path";
 
 const dataDir = process.env.DATA_DIR || path.join(process.cwd(), "data");
 fs.mkdirSync(dataDir, { recursive: true });
-const db = new DatabaseSync(path.join(dataDir, "athlos.db"));
-db.exec(`
-    PRAGMA journal_mode = WAL;
+const legacyDbPath = path.join(dataDir, "athlos.db");
+// The old filename is often held by macOS File Provider when the project lives
+// in Documents. A separate runtime database avoids that external file lock.
+const dbPath = process.env.ATHLOS_DATABASE || path.join(dataDir, "athlos.runtime.db");
+
+if (!process.env.ATHLOS_DATABASE && !fs.existsSync(dbPath) && fs.existsSync(legacyDbPath)) {
+    // Do not try to copy it here: macOS can block a synchronous copy of a
+    // cloud-managed WAL database just as it blocks SQLite itself. The legacy
+    // file is intentionally preserved; a developer can point ATHLOS_DATABASE
+    // at it later once the cloud provider has released the lock.
+    console.warn("[Athlos] An older local data store was preserved. Starting a responsive runtime store instead.");
+}
+
+// Asking SQLite to switch journal modes at every boot can wait forever when an
+// old development process still has the file open. Keep the existing mode and
+// bound lock waits so localhost never appears to silently freeze.
+console.log("[Athlos] Opening local data store…");
+const db = new DatabaseSync(dbPath, { timeout: 2000 });
+try {
+    db.exec(`
+    PRAGMA busy_timeout = 2000;
     PRAGMA foreign_keys = ON;
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,6 +72,12 @@ db.exec(`
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 `);
+} catch (error) {
+    const detail = error?.message || "Unknown SQLite error";
+    console.error(`[Athlos] Could not open ${dbPath}: ${detail}`);
+    console.error("[Athlos] Close any other Athlos server terminals, then run npm start again.");
+    throw error;
+}
 try{db.exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'athlete' CHECK(role IN ('athlete','coach','admin'))");}catch{}
 try{db.exec("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0");}catch{}
 
